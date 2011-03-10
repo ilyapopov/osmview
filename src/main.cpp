@@ -77,11 +77,11 @@ int main(int argc, char ** argv)
         
         // 4. Render the screen
         
-        Timer t1;
+        //Timer t1;
         
         mv.render(screen);
         
-        double tr = t1.delta();
+        //double tr = t1.delta();
         
         SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
         

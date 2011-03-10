@@ -23,6 +23,10 @@ public:
     ~Tile();
     
     bool load_png(std::string filename);
+    bool load()
+    {
+        return load_png(_filename);
+    }
     void clean_data();
     bool draw_to_SDL(SDL_Surface *surface);
     size_t inline width() const
