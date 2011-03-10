@@ -21,7 +21,7 @@ int main(int argc, char ** argv)
     
     SDL_WM_SetCaption("OSMview", NULL);
     
-    Mapview mv(screen);
+    Mapview mv;
     Timer motion_timer;
 
     while(1)

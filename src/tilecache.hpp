@@ -16,7 +16,6 @@ class TileCache
 
     std::string _tile_dir;
     map_t _cache;
-    SDL_Surface * _ref_surface;
     
     static key_t make_key(int level, int i, int j);
     std::string make_file_name(int level, int i, int j);
@@ -29,7 +28,7 @@ class TileCache
     SDL_Thread * _fetch_thread;
 
 public:
-    TileCache(std::string tile_dir, SDL_Surface * surface);
+    TileCache(std::string tile_dir);
     ~TileCache();
     
     SDL_Surface * get_tile(int level, int i, int j);

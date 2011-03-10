@@ -19,7 +19,7 @@ class Mapview
 
 public:
 
-    Mapview(SDL_Surface * ref_surface);
+    Mapview();
     
     void center_on(double lat, double lon);
     void move(double north, double east);

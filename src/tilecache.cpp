@@ -3,8 +3,8 @@
 #include <iostream>
 #include <sstream>
 
-TileCache::TileCache(std::string tile_dir, SDL_Surface * surface)
-: _tile_dir(tile_dir), _ref_surface(surface),
+TileCache::TileCache(std::string tile_dir)
+: _tile_dir(tile_dir),
 _fetch_thread_mutex(SDL_CreateMutex()), _new_commands(SDL_CreateCond()),
 _fetch_stop(false),
 _fetch_thread(NULL)
@@ -107,7 +107,7 @@ int TileCache::tile_fetcher_thread(void * param)
         SDL_UnlockMutex(tile_cache->_fetch_thread_mutex);
         
         // Do the work
-        tile_to_fetch->fetch(tile_cache->_ref_surface);
+        tile_to_fetch->fetch();
         
         SDL_LockMutex(tile_cache->_fetch_thread_mutex);
     }
