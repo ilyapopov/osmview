@@ -1,7 +1,8 @@
 find_package(SDL REQUIRED)
 find_package(PNG REQUIRED)
+#find_package(SDL_image REQUIRED)
 
-link_libraries(${SDL_LIBRARY} ${PNG_LIBRARY})
+link_libraries(${SDL_LIBRARY} ${PNG_LIBRARY} ${SDL_image_LIBRARY})
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-Wall -Wextra -Wno-unused-parameter")
 #set(CMAKE_BUILD_TYPE "Release")

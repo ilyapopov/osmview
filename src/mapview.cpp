@@ -11,8 +11,10 @@ const std::string tile_dir = "/home/ipopov/.cache/maps/tile.openstreetmap.org/";
 const int max_level = 17; 
 
 Mapview::Mapview(SDL_Surface * ref_surface)
-: _lat(0.0), _lon(0.0),  _level(5), _cache(tile_dir, ref_surface),
-_vlat(0.0), _vlon(0.0), _flat(0.0), _flon(0.0)
+    : _lat(0.0), _lon(0.0),   
+    _vlat(0.0), _vlon(0.0), _flat(0.0), _flon(0.0),
+    _level(5),
+    _cache(tile_dir, ref_surface)
 {
     std::cout << "Creating MapView..." << std::endl;
 }
@@ -45,12 +47,8 @@ int Mapview::zoom(int step)
 
 bool Mapview::render(SDL_Surface * surface)
 {
-    Timer timer0;
-    
     SDL_FillRect(surface, NULL, 0);
     
-    //std::cout << "Fill " << timer0.delta() << std::endl;
-
     int n = 1 << _level;
 
     int w = surface->w;
@@ -85,20 +83,12 @@ bool Mapview::render(SDL_Surface * surface)
             
             int i1 = (i < 0) ? (i + n) : ((i >= n) ? (i-n) : i);
             
-            Timer timer;
-
             SDL_Surface * tile = _cache.get_tile(_level, i1, j);
             if(tile == NULL)
                 continue;
                 
-            double t1 = timer.delta();
-
             SDL_Rect rect = {a, b, 0, 0};
             SDL_BlitSurface(tile, NULL, surface, &rect);
-            
-            double t2 = timer.delta();
-            
-            //std::cout << "T " << t1 << '\t' << t2 << std::endl;
         }
     }
     

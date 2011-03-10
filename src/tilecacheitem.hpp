@@ -15,9 +15,11 @@ class TileCacheItem
     
 public:
 
-    TileCacheItem(std::string file_name, SDL_Surface * surface);
+    TileCacheItem(std::string file_name);
     
     ~TileCacheItem();
+    
+    bool fetch(SDL_Surface * surface);
         
     SDL_Surface * get_surface() const
     {
