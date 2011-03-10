@@ -5,12 +5,9 @@
 
 #include <SDL/SDL.h>
 
-#include "tile.hpp"
-
 class TileCacheItem
 {
     std::string _file_name;
-    Tile * _tile;
     SDL_Surface * _surface;
     
 public:
@@ -19,7 +16,7 @@ public:
     
     ~TileCacheItem();
     
-    bool fetch(SDL_Surface * surface);
+    bool fetch();
         
     SDL_Surface * get_surface() const
     {

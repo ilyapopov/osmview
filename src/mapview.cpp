@@ -1,7 +1,6 @@
 #include "mapview.hpp"
 
 #include <cmath>
-#include <iostream>
 #include <string>
 
 #include "coord.hpp"
@@ -10,13 +9,12 @@
 const std::string tile_dir = "/home/ipopov/.cache/maps/tile.openstreetmap.org/";
 const int max_level = 17; 
 
-Mapview::Mapview(SDL_Surface * ref_surface)
+Mapview::Mapview()
     : _lat(0.0), _lon(0.0),   
     _vlat(0.0), _vlon(0.0), _flat(0.0), _flon(0.0),
     _level(5),
-    _cache(tile_dir, ref_surface)
+    _cache(tile_dir)
 {
-    std::cout << "Creating MapView..." << std::endl;
 }
 
 void Mapview::center_on(double lat, double lon)
