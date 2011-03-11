@@ -1,6 +1,6 @@
-#include <iostream>
+#include "main.hpp"
 
-#include <SDL/SDL.h>
+#include <iostream>
 
 #include "mapview.hpp"
 #include "timer.hpp"
@@ -11,15 +11,11 @@ int main(int argc, char ** argv)
     SDL_Init(SDL_INIT_VIDEO);
     atexit(SDL_Quit);
 
-    SDL_Surface *screen;
-
-    screen = SDL_SetVideoMode(1024, 768, 32, SDL_SWSURFACE);
-    if ( screen == NULL ) {
-        fprintf(stderr, "Unable to set video: %s\n", SDL_GetError());
-        exit(1);
-    }
-    
     SDL_WM_SetCaption("OSMview", NULL);
+    
+    SDL_Surface *screen;
+    
+    screen = set_video_mode(1024, 768);
     
     Mapview mv;
     Timer motion_timer;
@@ -33,21 +29,35 @@ int main(int argc, char ** argv)
         SDL_Event event;
         while(SDL_PollEvent(&event))
         {
-            if(event.type == SDL_QUIT)
+            switch(event.type)
             {
-                std::cout << "Exiting..." << std::endl;
-                return 0;
-            }
-            else if(event.type == SDL_KEYDOWN)
-            {
-                if(event.key.keysym.sym == SDLK_MINUS)
-                {
-                    mv.zoom(-1);
-                }
-                if(event.key.keysym.sym == SDLK_EQUALS)
-                {
-                    mv.zoom(1);
-                }
+                case SDL_QUIT:
+                    std::cout << "Exiting..." << std::endl;
+                    return 0;
+                case SDL_KEYDOWN:
+                    switch(event.key.keysym.sym)
+                    {
+                        case SDLK_MINUS:
+                            mv.zoom(-1);
+                            break;
+                        case SDLK_EQUALS:
+                            mv.zoom(1);
+                            break;
+                        case SDLK_F11:
+                            //SDL_WM_ToggleFullScreen(screen);
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case SDL_VIDEORESIZE:
+                    screen = set_video_mode(event.resize.w, event.resize.h);
+                    break;
+                case SDL_VIDEOEXPOSE:
+                    //nothing
+                    break;
+                default:
+                    break;
             }
         }
         
@@ -77,18 +87,25 @@ int main(int argc, char ** argv)
         
         // 4. Render the screen
         
-        //Timer t1;
+        if(!(SDL_GetAppState() & SDL_APPACTIVE))
+            continue;
         
         mv.render(screen);
         
-        //double tr = t1.delta();
-        
-        SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
-        
-        //std::cout << "F " << tr << '\t' << t1.delta() << std::endl;
-        //std::cout << std::endl;
+        SDL_UpdateRect(screen, 0, 0, 0, 0);
     
     }
     
     return 0;
 }
+
+SDL_Surface * set_video_mode(int w, int h)
+{
+    SDL_Surface * screen = SDL_SetVideoMode(w, h, 32, SDL_RESIZABLE);
+    if ( screen == NULL ) {
+        fprintf(stderr, "Unable to set video: %s\n", SDL_GetError());
+        exit(1);
+    }
+    return screen;
+}
+
