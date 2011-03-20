@@ -1,5 +1,6 @@
 #include "main.hpp"
 
+#include <cstdlib>
 #include <iostream>
 
 #include "mapview.hpp"
@@ -19,6 +20,9 @@ int main(int argc, char ** argv)
     
     Mapview mv;
     Timer motion_timer;
+    
+    bool mouse_pan = false;
+    int mousex = 0, mousey = 0;
 
     while(1)
     {
@@ -56,6 +60,34 @@ int main(int argc, char ** argv)
                 case SDL_VIDEOEXPOSE:
                     //nothing
                     break;
+                case SDL_MOUSEMOTION:
+                    //mv.move_pix_hard(event.motion.x, event.motion.y);
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                    switch(event.button.button)
+                    {
+                        case SDL_BUTTON_WHEELUP:
+                            mv.zoom(1);
+                            break;
+                        case SDL_BUTTON_WHEELDOWN:
+                            mv.zoom(-1);
+                            break;
+                        case SDL_BUTTON_LEFT:
+                            mouse_pan = true;
+                            SDL_GetRelativeMouseState(&mousex, &mousey);
+                        default:
+                            break;
+                    }
+                    break;
+                case SDL_MOUSEBUTTONUP:
+                    switch(event.button.button)
+                    {
+                        case SDL_BUTTON_LEFT:
+                            mouse_pan = false;
+                        default:
+                            break;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -66,19 +98,25 @@ int main(int argc, char ** argv)
         Uint8 *keystate = SDL_GetKeyState(NULL);
         if(keystate[SDLK_LEFT])
         {
-                    mv.move(0, -1);
+            mv.move(-1, 0);
         }
         if(keystate[SDLK_RIGHT])
         {
-                    mv.move(0, 1);
+            mv.move(1, 0);
         }
         if(keystate[SDLK_UP])
         {
-                    mv.move(1, 0);
+            mv.move(0, -1);
         }
         if(keystate[SDLK_DOWN])
         {
-                    mv.move(-1, 0);
+            mv.move(0, 1);
+        }
+        
+        if(mouse_pan)
+        {
+            SDL_GetRelativeMouseState(&mousex, &mousey);
+            mv.move_pix_hard(-mousex, -mousey);
         }
         
         // 3. Update system state
@@ -92,8 +130,7 @@ int main(int argc, char ** argv)
         
         mv.render(screen);
         
-        SDL_UpdateRect(screen, 0, 0, 0, 0);
-    
+        SDL_Flip(screen);
     }
     
     return 0;
@@ -102,8 +139,9 @@ int main(int argc, char ** argv)
 SDL_Surface * set_video_mode(int w, int h)
 {
     SDL_Surface * screen = SDL_SetVideoMode(w, h, 32, SDL_RESIZABLE);
-    if ( screen == NULL ) {
-        fprintf(stderr, "Unable to set video: %s\n", SDL_GetError());
+    if (screen == NULL)
+    {
+        std::cerr << "Unable to set video: " << SDL_GetError() << std::endl;
         exit(1);
     }
     return screen;

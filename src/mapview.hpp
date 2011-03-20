@@ -7,11 +7,17 @@
 
 class Mapview
 {
-    double _lat;
-    double _lon;
+    static const int _tile_size = 256;
+    static const double _v0 = 2.0;
+    static const std::string _tile_dir;
+    static const int _max_level = 15; 
+    static const double _tau = 0.3;
+
+    double _mapx;
+    double _mapy;
     
-    double _vlat, _vlon;
-    double _flat, _flon;
+    double _vx, _vy;
+    double _fx, _fy;
     
     int _level;
     
@@ -22,7 +28,8 @@ public:
     Mapview();
     
     void center_on(double lat, double lon);
-    void move(double north, double east);
+    void move(double move_x, double move_y);
+    void move_pix_hard(double dx, double dy);
     void motion_step(double dt);
     
     int zoom(int step);

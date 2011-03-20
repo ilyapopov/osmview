@@ -6,30 +6,36 @@
 #include "coord.hpp"
 #include "timer.hpp"
 
-const std::string tile_dir = "/home/ipopov/.cache/maps/tile.openstreetmap.org/";
-const int max_level = 17; 
+const std::string Mapview::_tile_dir("/home/ipopov/.cache/maps/tile.openstreetmap.org/");
 
 Mapview::Mapview()
-    : _lat(0.0), _lon(0.0),   
-    _vlat(0.0), _vlon(0.0), _flat(0.0), _flon(0.0),
+    : _mapx(0.5), _mapy(0.5),   
+    _vx(0.0), _vy(0.0), _fx(0.0), _fy(0.0),
     _level(5),
-    _cache(tile_dir)
+    _cache(_tile_dir)
 {
 }
 
 void Mapview::center_on(double lat, double lon)
 {
-    _lat = lat;
-    _lon = lon;
-    _vlat = _vlon = 0.0;
-    _flat = _flon = 0.0;
+    _mapx = lon2mapx(lon);
+    _mapy = lat2mapy(lat);
+    _vx = _vy = 0.0;
+    _fx = _fy = 0.0;
 }
 
-void Mapview::move(double north, double east)
+void Mapview::move(double move_x, double move_y)
 {
-    double v0 = 400.0;
-    _flat += v0 * north / (1<< _level);
-    _flon += v0 * east / (1 << _level);
+    double scale = pow(2.0, _level);
+    _fx += _v0 * move_x / scale;
+    _fy += _v0 * move_y / scale;
+}
+
+void Mapview::move_pix_hard(double dx, double dy)
+{
+    double scale = pow(2.0, _level);
+    _mapx += dx / _tile_size / scale;
+    _mapy += dy / _tile_size / scale;
 }
 
 int Mapview::zoom(int step)
@@ -37,8 +43,8 @@ int Mapview::zoom(int step)
     _level += step;
     if(_level < 0)
         _level = 0;
-    else if(_level > max_level)
-        _level = max_level;
+    else if(_level > _max_level)
+        _level = _max_level;
         
     return _level;
 }
@@ -52,15 +58,13 @@ bool Mapview::render(SDL_Surface * surface)
     int w = surface->w;
     int h = surface->h;
 
-    double yc = lat2tiley(_lat, _level);
-    double xc = lon2tilex(_lon, _level);
+    double xc = _mapx * n;
+    double yc = _mapy * n;
     
-    const int tile_size = 256;
-    
-    double xmin = xc - 0.5 * w / tile_size;
-    double xmax = xc + 0.5 * w / tile_size;
-    double ymin = yc - 0.5 * h / tile_size;
-    double ymax = yc + 0.5 * h / tile_size;
+    double xmin = xc - 0.5 * w / _tile_size;
+    double xmax = xc + 0.5 * w / _tile_size;
+    double ymin = yc - 0.5 * h / _tile_size;
+    double ymax = yc + 0.5 * h / _tile_size;
     
     int imin = floor(xmin);
     int imax = ceil(xmax);
@@ -76,8 +80,8 @@ bool Mapview::render(SDL_Surface * surface)
                 continue;
             }
         
-            int a = (int)floor((w/2) + tile_size * (i - xc));
-            int b = (int)floor((h/2) + tile_size * (j - yc));
+            int a = static_cast<int>(floor((w/2) + _tile_size * (i - xc)));
+            int b = static_cast<int>(floor((h/2) + _tile_size * (j - yc)));
             
             int i1 = (i < 0) ? (i + n) : ((i >= n) ? (i-n) : i);
             
@@ -95,22 +99,21 @@ bool Mapview::render(SDL_Surface * surface)
 
 void Mapview::motion_step(double dt)
 {
-    double tau = 0.3;
-    _vlat += (_flat - _vlat)*dt/tau;
-    _vlon += (_flon - _vlon)*dt/tau;
+    _vx += (_fx - _vx)*dt/_tau;
+    _vy += (_fy - _vy)*dt/_tau;
     
-    _flat = 0;
-    _flon = 0;
+    _fx = 0.0;
+    _fy = 0.0;
 
-    _lat += _vlat * dt;
-    if(_lat < -85.0)
-        _lat = -85.0;
-    else if(_lat > 85.0)
-        _lat = 85.0;
+    _mapy += _vy * dt;
+    if(_mapy < 0.0)
+        _mapy = 0.0;
+    else if(_mapy > 1.0)
+        _mapy = 1.0;
 
-    _lon += _vlon * dt;
-    if(_lon < -180.0)
-        _lon += 360.0; 
-    else if(_lon > 180.0)
-        _lon -= 360.0;
+    _mapx += _vx * dt;
+    if(_mapx < 0.0)
+        _mapx += 1.0; 
+    else if(_mapx > 1.0)
+        _mapx -= 1.0;
 }

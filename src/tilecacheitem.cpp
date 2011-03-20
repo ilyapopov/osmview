@@ -1,7 +1,5 @@
 #include "tilecacheitem.hpp"
 
-#include <iostream>
-
 #include <SDL/SDL_image.h>
 
 TileCacheItem::TileCacheItem(std::string file_name)
@@ -23,7 +21,5 @@ bool TileCacheItem::fetch()
     if(s == NULL)
         return false;
     _surface = SDL_DisplayFormat(s);
-    //_surface = s;
-    //std::cout << _file_name << " loaded" << std::endl;
     return true;
 }
