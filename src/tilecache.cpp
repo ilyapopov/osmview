@@ -108,6 +108,7 @@ int TileCache::tile_fetcher_thread(void * param)
         
         // Do the work
         tile_to_fetch->fetch();
+        fetched += 1;
         
         SDL_LockMutex(tile_cache->_fetch_thread_mutex);
     }

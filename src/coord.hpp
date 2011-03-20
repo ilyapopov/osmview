@@ -1,9 +1,9 @@
 #ifndef COORD_HPP_INCLUDED
 #define COORD_HPP_INCLUDED
 
-double lon2tilex(double lon, int z);
-double lat2tiley(double lat, int z);
-double tilex2lon(double x, int z);
-double tiley2lat(double y, int z);
+double lon2mapx(double lon);
+double lat2mapy(double lat);
+double mapx2lon(double x);
+double mapy2lat(double y);
 
 #endif
