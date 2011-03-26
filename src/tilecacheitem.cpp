@@ -35,7 +35,7 @@ TileCacheItem::~TileCacheItem()
 bool TileCacheItem::fetch()
 {
     if(_surface != NULL)
-        SDL_FreeSurface(_surface);
+        return true;
     SDL_Surface * s = IMG_Load(_file_name.c_str());
     if(s == NULL)
         return false;

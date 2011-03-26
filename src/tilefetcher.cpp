@@ -45,12 +45,12 @@ int TileFetcher::tile_fetcher_thread(void * param)
 
 void TileFetcher::enqueue(TileCacheItem * item)
 {
-        SDL_LockMutex(_fetch_thread_mutex);
-        
-        _fetch_queue.push(item);
-        SDL_CondSignal(_new_commands);
-        
-        SDL_UnlockMutex(_fetch_thread_mutex);
+    SDL_LockMutex(_fetch_thread_mutex);
+
+    _fetch_queue.push(item);
+    SDL_CondSignal(_new_commands);
+    
+    SDL_UnlockMutex(_fetch_thread_mutex);
 }
 
 void TileFetcher::stop()

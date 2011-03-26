@@ -30,7 +30,7 @@ int main(int argc, char ** argv)
     std::cout << "Starting..." << std::endl;
     SDL_Init(SDL_INIT_VIDEO);
     atexit(SDL_Quit);
-
+    
     SDL_WM_SetCaption("OSMview", NULL);
     
     SDL_Surface *screen;

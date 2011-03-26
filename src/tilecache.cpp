@@ -19,7 +19,6 @@
 
 #include "tilecache.hpp"
 
-#include <iostream>
 #include <sstream>
 
 TileCache::TileCache(std::string tile_dir)
@@ -54,20 +53,24 @@ SDL_Surface * TileCache::get_tile(int level, int i, int j)
 
     if(p == _cache.end())
     {
-        std::cout << "Miss: " << key << std::flush;
-        
         std::string file_name = make_file_name(level, i, j);
         
         TileCacheItem * item = new TileCacheItem(file_name);
         
         p = _cache.insert(make_pair(key, item)).first;
-
-        _fetcher.enqueue(item);        
-        
-        std::cout << '\t' << _cache.size() << std::endl;
     }
 
-    return p->second->get_surface();
+    SDL_Surface * tile = p->second->get_surface();
+    
+    // Try to load missing tiles again and again hoping
+    // that someone else downloaded them
+    // may decrease performance
+    if(tile == NULL)
+    {
+        _fetcher.enqueue(p->second);
+    }
+    
+    return tile;
 }
 
 TileCache::key_t TileCache::make_key(int level, int i, int j)
@@ -86,5 +89,4 @@ std::string TileCache::make_file_name(int level, int i, int j)
 
     return ss.str();
 }
-
 
