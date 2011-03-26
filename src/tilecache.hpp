@@ -27,6 +27,39 @@
 
 #include "tilecacheitem.hpp"
 #include "tilefetcher.hpp"
+#include "worker.hpp"
+
+class FetchJob
+{
+    TileCacheItem * _item;
+    
+public:
+    FetchJob(TileCacheItem * item)
+    : _item(item)
+    {}
+    
+    void operator()()
+    {
+        _item->fetch();
+    }
+};
+
+class DownloadJob
+{
+    TileCacheItem * _item;
+    
+public:
+    DownloadJob(TileCacheItem * item)
+    : _item(item)
+    {}
+    
+    void operator()()
+    {
+        _item->download();
+    }
+};
+
+
 
 class TileCache
 {
@@ -39,7 +72,8 @@ class TileCache
     static key_t make_key(int level, int i, int j);
     std::string make_file_name(int level, int i, int j);
     
-    TileFetcher _fetcher;
+    Worker<FetchJob> _fetcher;
+    //Worker<DownloadJob> _downloader;
     
 public:
     TileCache(std::string tile_dir);

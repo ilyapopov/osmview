@@ -36,6 +36,7 @@ public:
     ~TileCacheItem();
     
     bool fetch();
+    bool download();
         
     SDL_Surface * get_surface() const
     {

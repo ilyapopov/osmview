@@ -67,7 +67,7 @@ SDL_Surface * TileCache::get_tile(int level, int i, int j)
     // may decrease performance
     if(tile == NULL)
     {
-        _fetcher.enqueue(p->second);
+        _fetcher.enqueue(FetchJob(p->second));
     }
     
     return tile;
