@@ -1,4 +1,0 @@
-#ifndef TILE_FETCHER_HPP_INCLUDED
-#define TILE_FETCHER_HPP_INCLUDED
-
-#endif
