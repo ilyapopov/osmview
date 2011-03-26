@@ -26,7 +26,6 @@
 #include <SDL/SDL.h>
 
 #include "tilecacheitem.hpp"
-#include "tilefetcher.hpp"
 #include "worker.hpp"
 
 class FetchJob
