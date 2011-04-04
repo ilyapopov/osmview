@@ -22,6 +22,8 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <curl/curl.h>
+
 #include "mapview.hpp"
 #include "timer.hpp"
 
@@ -30,6 +32,9 @@ int main(int argc, char ** argv)
     std::cout << "Starting..." << std::endl;
     SDL_Init(SDL_INIT_VIDEO);
     atexit(SDL_Quit);
+    
+    curl_global_init(CURL_GLOBAL_ALL);
+    atexit(curl_global_cleanup);
     
     SDL_WM_SetCaption("OSMview", NULL);
     

@@ -26,12 +26,13 @@
 #include "timer.hpp"
 
 const std::string Mapview::_tile_dir("/home/ipopov/.cache/maps/tile.openstreetmap.org/");
+const std::string Mapview::_url_base("http://c.tile.openstreetmap.org/");
 
 Mapview::Mapview()
     : _mapx(0.5), _mapy(0.5),   
     _vx(0.0), _vy(0.0), _fx(0.0), _fy(0.0),
     _level(5),
-    _cache(_tile_dir)
+    _cache(_tile_dir, _url_base)
 {
 }
 

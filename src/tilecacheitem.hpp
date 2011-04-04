@@ -27,16 +27,22 @@
 class TileCacheItem
 {
     std::string _file_name;
+    std::string _url;
+    bool _fetch_error;
     SDL_Surface * _surface;
     
 public:
 
-    TileCacheItem(std::string file_name);
+    TileCacheItem(const std::string file_name, const std::string url);
     
     ~TileCacheItem();
     
     bool fetch();
     bool download();
+    bool fetch_error()
+    {
+        return _fetch_error;
+    }
         
     SDL_Surface * get_surface() const
     {

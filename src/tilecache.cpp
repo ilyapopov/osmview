@@ -21,8 +21,8 @@
 
 #include <sstream>
 
-TileCache::TileCache(std::string tile_dir)
-: _tile_dir(tile_dir)
+TileCache::TileCache(const std::string tile_dir, const std::string url_base)
+: _tile_dir(tile_dir), _url_base(url_base)
 {
 }
 
@@ -54,20 +54,25 @@ SDL_Surface * TileCache::get_tile(int level, int i, int j)
     if(p == _cache.end())
     {
         std::string file_name = make_file_name(level, i, j);
+        std::string url = make_url(level, i, j);
         
-        TileCacheItem * item = new TileCacheItem(file_name);
+        TileCacheItem * item = new TileCacheItem(file_name, url);
         
         p = _cache.insert(make_pair(key, item)).first;
     }
 
     SDL_Surface * tile = p->second->get_surface();
     
-    // Try to load missing tiles again and again hoping
-    // that someone else downloaded them
+    // Try to load missing tiles again and again
+    // hoping that someone else downloaded them
     // may decrease performance
     if(tile == NULL)
     {
         _fetcher.enqueue(FetchJob(p->second));
+        if(p->second->fetch_error())
+        {
+            _downloader.enqueue(DownloadJob(p->second));
+        }
     }
     
     return tile;
@@ -85,6 +90,15 @@ std::string TileCache::make_file_name(int level, int i, int j)
 {
     std::stringstream ss;
     ss << _tile_dir;
+    ss << level << '/' << i << '/' << j << ".png";
+
+    return ss.str();
+}
+
+std::string TileCache::make_url(int level, int i, int j)
+{
+    std::stringstream ss;
+    ss << _url_base;
     ss << level << '/' << i << '/' << j << ".png";
 
     return ss.str();

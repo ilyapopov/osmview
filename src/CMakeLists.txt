@@ -10,6 +10,10 @@ find_package(CURL REQUIRED)
 link_libraries(${CURL_LIBRARIES})
 include_directories(${CURL_INCLUDEDIRS})
 
+find_package(Boost COMPONENTS filesystem REQUIRED)
+link_libraries(${Boost_LIBRARIES})
+include_directories(${Boost_INCLUDE_DIRS})
+
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-Wall -Wextra -Wno-unused-parameter -Wold-style-cast")
 #set(CMAKE_BUILD_TYPE "Release")
 
