@@ -17,14 +17,15 @@ class Worker
 
 public:
     Worker();
+    ~Worker();
     
     void enqueue(job_type job);
     void stop();
 };
 
 template <typename job_type>
-Worker<job_type>::Worker():
-_thread_mutex(SDL_CreateMutex()), _new_commands(SDL_CreateCond()),
+Worker<job_type>::Worker()
+: _thread_mutex(SDL_CreateMutex()), _new_commands(SDL_CreateCond()),
 _stop(false),
 _thread(NULL)
 {
@@ -32,38 +33,47 @@ _thread(NULL)
 }
 
 template <typename job_type>
+Worker<job_type>::~Worker()
+{
+    stop();
+
+    if(_thread_mutex)
+        SDL_DestroyMutex(_thread_mutex);
+    if(_new_commands)
+        SDL_DestroyCond(_new_commands);
+}
+
+template <typename job_type>
 int Worker<job_type>::worker_thread(void * param)
 {
-    Worker * tile_cache = reinterpret_cast<Worker *>(param);
+    Worker * worker = reinterpret_cast<Worker *>(param);
     
-    int fetched = 0;
-    
-    SDL_LockMutex(tile_cache->_thread_mutex);
+    SDL_LockMutex(worker->_thread_mutex);
     while(true)
     {
-        if(tile_cache->_stop)
+        if(worker->_stop)
         {
             break;
         }
-        if(tile_cache->_queue.empty())
+        if(worker->_queue.empty())
         {
-            SDL_CondWait(tile_cache->_new_commands, tile_cache->_thread_mutex);
+            SDL_CondWait(worker->_new_commands, worker->_thread_mutex);
             continue;
         }
         
-        job_type job = tile_cache->_queue.front();
-        tile_cache->_queue.pop();
+        job_type job = worker->_queue.front();
+        worker->_queue.pop();
         
-        SDL_UnlockMutex(tile_cache->_thread_mutex);
+        SDL_UnlockMutex(worker->_thread_mutex);
         
         // Do the work
         job();
         
-        SDL_LockMutex(tile_cache->_thread_mutex);
+        SDL_LockMutex(worker->_thread_mutex);
     }
-    SDL_UnlockMutex(tile_cache->_thread_mutex);
+    SDL_UnlockMutex(worker->_thread_mutex);
     
-    return fetched;
+    return 0;
 }
 
 template <typename job_type>

@@ -30,6 +30,7 @@ class TileCacheItem
     std::string _url;
     bool _fetch_error;
     SDL_Surface * _surface;
+    SDL_mutex * _mutex;
     
 public:
 
