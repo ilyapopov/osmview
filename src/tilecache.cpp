@@ -28,8 +28,6 @@ TileCache::TileCache(const std::string tile_dir, const std::string url_base)
 
 TileCache::~TileCache()
 {
-    _fetcher.stop();    
-
     for(map_t::iterator i = _cache.begin(); i != _cache.end(); ++i)
     {
         if(i->second != NULL)
