@@ -2,53 +2,53 @@
 #define WORKER_HPP_INCLUDED
 
 #include <queue>
-
-#include <SDL/SDL.h>
+#include <thread>
+#include <vector>
 
 template <typename job_type>
-class Worker
+class WorkerPool
 {
-    static int worker_thread(void * param);
-    SDL_mutex * _thread_mutex;
-    SDL_cond * _new_commands;
+    std::mutex _mutex;
+    std::condition_variable _new_commands;
     std::queue<job_type> _queue;
     bool _stop;
-    SDL_Thread * _thread;
+    std::vector<std::thread *> _threads;
+
+    static int worker_thread(void * param);
+    void stop();
 
 public:
-    Worker();
-    ~Worker();
+    WorkerPool(int nthreads = 1);
+    ~WorkerPool();
     
     void enqueue(job_type job);
-    void stop();
+    void clear();
 };
 
 template <typename job_type>
-Worker<job_type>::Worker()
-: _thread_mutex(SDL_CreateMutex()), _new_commands(SDL_CreateCond()),
-_stop(false),
-_thread(NULL)
+WorkerPool<job_type>::WorkerPool(int nthreads)
+: 
+    _stop(false)
 {
-    _thread = SDL_CreateThread(worker_thread, this);
+    for(int i = 0; i < nthreads; i++)
+    {
+        std::thread * thread = new std::thread(worker_thread, this);
+        _threads.push_back(thread);
+    }
 }
 
 template <typename job_type>
-Worker<job_type>::~Worker()
+WorkerPool<job_type>::~WorkerPool()
 {
     stop();
-
-    if(_thread_mutex)
-        SDL_DestroyMutex(_thread_mutex);
-    if(_new_commands)
-        SDL_DestroyCond(_new_commands);
 }
 
 template <typename job_type>
-int Worker<job_type>::worker_thread(void * param)
+int WorkerPool<job_type>::worker_thread(void * param)
 {
-    Worker * worker = reinterpret_cast<Worker *>(param);
+    WorkerPool * worker = reinterpret_cast<WorkerPool *>(param);
     
-    SDL_LockMutex(worker->_thread_mutex);
+    std::unique_lock<std::mutex> lock(worker->_mutex);
     while(true)
     {
         if(worker->_stop)
@@ -57,45 +57,58 @@ int Worker<job_type>::worker_thread(void * param)
         }
         if(worker->_queue.empty())
         {
-            SDL_CondWait(worker->_new_commands, worker->_thread_mutex);
+            worker->_new_commands.wait(lock);
             continue;
         }
         
         job_type job = worker->_queue.front();
         worker->_queue.pop();
         
-        SDL_UnlockMutex(worker->_thread_mutex);
+        lock.unlock();
         
         // Do the work
         job();
         
-        SDL_LockMutex(worker->_thread_mutex);
+        lock.lock();
     }
-    SDL_UnlockMutex(worker->_thread_mutex);
+    lock.unlock();
     
     return 0;
 }
 
 template <typename job_type>
-void Worker<job_type>::enqueue(job_type job)
+void WorkerPool<job_type>::enqueue(job_type job)
 {
-    SDL_LockMutex(_thread_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
 
     _queue.push(job);
-    SDL_CondSignal(_new_commands);
-    
-    SDL_UnlockMutex(_thread_mutex);
+    _new_commands.notify_one();
 }
 
 template <typename job_type>
-void Worker<job_type>::stop()
+void WorkerPool<job_type>::stop()
 {
-    SDL_LockMutex(_thread_mutex);
-    _stop = true;
-    SDL_CondBroadcast(_new_commands);
-    SDL_UnlockMutex(_thread_mutex);
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _stop = true;
+        _new_commands.notify_all();
+    }
 
-    SDL_WaitThread(_thread, NULL);
+    for(std::vector<std::thread *>::iterator i = _threads.begin(); i != _threads.end(); ++i)
+    {
+        (*i)->join();
+        delete *i;
+        *i = NULL;
+    }
+}
+
+template <typename job_type>
+void WorkerPool<job_type>::clear()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    
+    while(!_queue.empty())
+        _queue.pop();
 }
 
 #endif

@@ -20,35 +20,35 @@
 #ifndef TILECACHEITEM_HPP_INCLUDED
 #define TILECACHEITEM_HPP_INCLUDED
 
+#include <thread>
 #include <string>
 
 #include <SDL/SDL.h>
+
+class TileCache;
 
 class TileCacheItem
 {
     std::string _file_name;
     std::string _url;
-    bool _fetch_error;
     SDL_Surface * _surface;
-    SDL_mutex * _mutex;
+    std::mutex _mutex;
+    bool _busy;
     
+    TileCache * _cache;
+
 public:
 
-    TileCacheItem(const std::string file_name, const std::string url);
+    TileCacheItem(TileCache * cache, const std::string file_name, const std::string url);
     
     ~TileCacheItem();
     
     bool fetch();
     bool download();
-    bool fetch_error()
-    {
-        return _fetch_error;
-    }
         
-    SDL_Surface * get_surface() const
-    {
-        return _surface;
-    }
+    SDL_Surface * get_surface_locked();
+    
+    void surface_unlock();
 };
 
 

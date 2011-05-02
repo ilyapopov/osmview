@@ -31,7 +31,7 @@ const std::string Mapview::_url_base("http://c.tile.openstreetmap.org/");
 Mapview::Mapview()
     : _mapx(0.5), _mapy(0.5),   
     _vx(0.0), _vy(0.0), _fx(0.0), _fy(0.0),
-    _level(5),
+    _level(1),
     _cache(_tile_dir, _url_base)
 {
 }
@@ -105,12 +105,19 @@ bool Mapview::render(SDL_Surface * surface)
             
             int i1 = (i < 0) ? (i + n) : ((i >= n) ? (i-n) : i);
             
-            SDL_Surface * tile = _cache.get_tile(_level, i1, j);
-            if(tile == NULL)
+            TileCacheItem * tile_item = _cache.get_tile(_level, i1, j);
+            if(tile_item == NULL)
                 continue;
+            SDL_Surface * tile = tile_item->get_surface_locked();
+            if(tile == NULL)
+            {
+                tile_item->surface_unlock();
+                continue;
+            }
                 
-            SDL_Rect rect = {a, b, 0, 0};
+            SDL_Rect rect = {static_cast<Sint16>(a), static_cast<Sint16>(b), 0, 0};
             SDL_BlitSurface(tile, NULL, surface, &rect);
+            tile_item->surface_unlock();
         }
     }
     

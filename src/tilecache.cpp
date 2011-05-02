@@ -22,7 +22,11 @@
 #include <sstream>
 
 TileCache::TileCache(const std::string tile_dir, const std::string url_base)
-: _tile_dir(tile_dir), _url_base(url_base)
+:
+    _tile_dir(tile_dir),
+    _url_base(url_base),
+    _fetcher(2),
+    _downloader(4)
 {
 }
 
@@ -38,7 +42,7 @@ TileCache::~TileCache()
     }
 }
 
-SDL_Surface * TileCache::get_tile(int level, int i, int j)
+TileCacheItem * TileCache::get_tile(int level, int i, int j)
 {
     if(level < 0 )
         return NULL;
@@ -54,26 +58,12 @@ SDL_Surface * TileCache::get_tile(int level, int i, int j)
         std::string file_name = make_file_name(level, i, j);
         std::string url = make_url(level, i, j);
         
-        TileCacheItem * item = new TileCacheItem(file_name, url);
+        TileCacheItem * item = new TileCacheItem(this, file_name, url);
         
         p = _cache.insert(make_pair(key, item)).first;
     }
 
-    SDL_Surface * tile = p->second->get_surface();
-    
-    // Try to load missing tiles again and again
-    // hoping that someone else downloaded them
-    // may decrease performance
-    if(tile == NULL)
-    {
-        _fetcher.enqueue(FetchJob(p->second));
-        if(p->second->fetch_error())
-        {
-            _downloader.enqueue(DownloadJob(p->second));
-        }
-    }
-    
-    return tile;
+    return p->second;
 }
 
 TileCache::key_t TileCache::make_key(int level, int i, int j)
@@ -100,5 +90,21 @@ std::string TileCache::make_url(int level, int i, int j)
     ss << level << '/' << i << '/' << j << ".png";
 
     return ss.str();
+}
+
+void TileCache::request_fetch(TileCacheItem * item)
+{
+    _fetcher.enqueue(FetchJob(item));
+}
+
+void TileCache::request_download(TileCacheItem * item)
+{
+    _downloader.enqueue(DownloadJob(item));
+}
+
+void TileCache::clear_queues()
+{
+    _fetcher.clear();
+    _downloader.clear();
 }
 
