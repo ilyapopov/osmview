@@ -23,8 +23,6 @@
 #include <map>
 #include <string>
 
-#include <SDL/SDL.h>
-
 #include "tilecacheitem.hpp"
 #include "worker.hpp"
 
@@ -75,14 +73,19 @@ class TileCache
     std::string make_file_name(int level, int i, int j);
     std::string make_url(int level, int i, int j);
     
-    Worker<FetchJob> _fetcher;
-    Worker<DownloadJob> _downloader;
+    WorkerPool<FetchJob> _fetcher;
+    WorkerPool<DownloadJob> _downloader;
     
 public:
     TileCache(const std::string tile_dir, const std::string url_base);
     ~TileCache();
     
-    SDL_Surface * get_tile(int level, int i, int j);
+    TileCacheItem * get_tile(int level, int i, int j);
+    
+    void request_fetch(TileCacheItem * item);
+    void request_download(TileCacheItem * item);
+    
+    void clear_queues();
 };
 
 #endif

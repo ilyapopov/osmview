@@ -20,69 +20,103 @@
 #include "tilecacheitem.hpp"
 
 #include <iostream>
-#include <boost/filesystem.hpp>
 
+#include <boost/filesystem.hpp>
 #include <curl/curl.h>
 #include <SDL/SDL_image.h>
 
-TileCacheItem::TileCacheItem(const std::string file_name, const std::string url)
-: _file_name(file_name), _url(url), _fetch_error(false), _surface(NULL),
-_mutex(SDL_CreateMutex())
+#include "tilecache.hpp"
+
+TileCacheItem::TileCacheItem(TileCache * cache, const std::string file_name, const std::string url)
+:
+    _file_name(file_name),
+    _url(url),
+    _surface(NULL),
+    _busy(false),
+    _cache(cache)
 {
 }
     
 TileCacheItem::~TileCacheItem()
 {
+    std::lock_guard<std::mutex> lock(_mutex);
+
     if(_surface != NULL)
         SDL_FreeSurface(_surface);
-    if(_mutex != NULL)
-        SDL_DestroyMutex(_mutex);
 }
 
 bool TileCacheItem::fetch()
 {
-    if(_surface != NULL)
-    {
+    std::unique_lock<std::mutex> lock(_mutex);
+
+    if(_busy)
         return true;
-    }
+
+    _busy = true;
+
+    lock.unlock();
+
+    std::cout << "Fetching " << _file_name << " ..." << std::endl;
     SDL_Surface * s = IMG_Load(_file_name.c_str());
+
+    lock.lock();
+
     if(s == NULL)
-    {
-        _fetch_error = true;
-        return false;
-    }
-    SDL_LockMutex(_mutex);
-    //_surface = SDL_DisplayFormat(s);
-    _surface = s;
-    SDL_UnlockMutex(_mutex);
+        _cache->request_download(this);
+    else
+        _surface = s;
+
+    _busy = false;
+
     return true;
 }
 
 bool TileCacheItem::download()
 {
-    if(_fetch_error == false)
+    std::unique_lock<std::mutex> lock(_mutex);
+
+    if(_busy)
         return true;
-    _fetch_error = false;
-    std::cout << "Downloading " << _url << " ..." <<std::endl;
+
+    _busy = true;
+
+    lock.unlock();
+
+    std::cout << "Downloading " << _url << " ..." << std::endl;
     
     boost::filesystem::path path(_file_name);
     
     boost::filesystem::create_directories(path.parent_path());
 
     FILE * file = fopen(path.string().c_str(), "wb");
-    if(!file)
+    if(file)
     {
-        _fetch_error = true;
-        return false;
+        CURL * curl = curl_easy_init();
+        curl_easy_setopt(curl, CURLOPT_URL, _url.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+        curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+
+        fclose(file);
     }
+    
+    lock.lock();
 
-    CURL * curl = curl_easy_init();
-    curl_easy_setopt(curl, CURLOPT_URL, _url.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-    curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
-    fclose(file);
-
+    _busy = false;
+    
     return true;
+}
+
+SDL_Surface * TileCacheItem::get_surface_locked()
+{
+    _mutex.lock();
+    if(_surface == NULL)
+        _cache->request_fetch(this);
+    return _surface;
+}
+
+void TileCacheItem::surface_unlock()
+{
+    _mutex.unlock();
 }
 
