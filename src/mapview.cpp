@@ -99,23 +99,24 @@ bool Mapview::render(SDL_Surface * surface)
             {
                 continue;
             }
-        
-            int a = static_cast<int>(floor((w/2) + _tile_size * (i - xc)));
-            int b = static_cast<int>(floor((h/2) + _tile_size * (j - yc)));
             
             int i1 = (i < 0) ? (i + n) : ((i >= n) ? (i-n) : i);
             
             TileCacheItem * tile_item = _cache.get_tile(_level, i1, j);
             if(tile_item == NULL)
                 continue;
+
             SDL_Surface * tile = tile_item->get_surface_locked();
             if(tile == NULL)
             {
                 tile_item->surface_unlock();
                 continue;
             }
+
+            Sint16 a = static_cast<Sint16>(floor((w/2) + _tile_size * (i - xc)));
+            Sint16 b = static_cast<Sint16>(floor((h/2) + _tile_size * (j - yc)));
                 
-            SDL_Rect rect = {static_cast<Sint16>(a), static_cast<Sint16>(b), 0, 0};
+            SDL_Rect rect = {a, b, 0, 0};
             SDL_BlitSurface(tile, NULL, surface, &rect);
             tile_item->surface_unlock();
         }

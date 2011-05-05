@@ -1,6 +1,8 @@
 #ifndef WORKER_HPP_INCLUDED
 #define WORKER_HPP_INCLUDED
 
+#include <condition_variable>
+#include <mutex>
 #include <queue>
 #include <thread>
 #include <vector>
@@ -82,7 +84,7 @@ void WorkerPool<job_type>::enqueue(job_type job)
     std::lock_guard<std::mutex> lock(_mutex);
 
     _queue.push(job);
-    _new_commands.notify_one();
+   _new_commands.notify_one();
 }
 
 template <typename job_type>

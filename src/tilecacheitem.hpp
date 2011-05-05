@@ -29,17 +29,19 @@ class TileCache;
 
 class TileCacheItem
 {
-    std::string _file_name;
-    std::string _url;
+    const std::string _id;
+    const std::string _file_name;
+    const std::string _url;
     SDL_Surface * _surface;
     std::mutex _mutex;
     bool _busy;
+    bool _queued;
     
     TileCache * _cache;
 
 public:
 
-    TileCacheItem(TileCache * cache, const std::string file_name, const std::string url);
+    TileCacheItem(TileCache * cache, const std::string _id, const std::string file_name, const std::string url);
     
     ~TileCacheItem();
     
@@ -49,6 +51,11 @@ public:
     SDL_Surface * get_surface_locked();
     
     void surface_unlock();
+    
+    std::string id() const
+    {
+        return _id;
+    }
 };
 
 

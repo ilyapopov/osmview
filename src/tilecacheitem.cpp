@@ -27,12 +27,14 @@
 
 #include "tilecache.hpp"
 
-TileCacheItem::TileCacheItem(TileCache * cache, const std::string file_name, const std::string url)
+TileCacheItem::TileCacheItem(TileCache * cache, const std::string id, const std::string file_name, const std::string url)
 :
+    _id(id),
     _file_name(file_name),
     _url(url),
     _surface(NULL),
     _busy(false),
+    _queued(false),
     _cache(cache)
 {
 }
@@ -64,7 +66,10 @@ bool TileCacheItem::fetch()
     if(s == NULL)
         _cache->request_download(this);
     else
+    {
         _surface = s;
+        _queued = false;
+    }
 
     _busy = false;
 
@@ -103,6 +108,7 @@ bool TileCacheItem::download()
     lock.lock();
 
     _busy = false;
+    _queued = false;
     
     return true;
 }
@@ -110,8 +116,11 @@ bool TileCacheItem::download()
 SDL_Surface * TileCacheItem::get_surface_locked()
 {
     _mutex.lock();
-    if(_surface == NULL)
+    if(_surface == NULL && !_queued && !_busy)
+    {
         _cache->request_fetch(this);
+        _queued = true;
+    }
     return _surface;
 }
 
