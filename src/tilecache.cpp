@@ -19,7 +19,6 @@
 
 #include "tilecache.hpp"
 
-#include <iostream>
 #include <sstream>
 
 TileCache::TileCache(const std::string tile_dir, const std::string url_base)
@@ -56,8 +55,6 @@ TileCacheItem * TileCache::get_tile(int level, int i, int j)
 
     if(p == _cache.end())
     {
-        std::cout << "Miss: " << key << std::endl;
-        
         std::string file_name = make_file_name(level, i, j);
         std::string url = make_url(level, i, j);
         
@@ -97,13 +94,11 @@ std::string TileCache::make_url(int level, int i, int j)
 
 void TileCache::request_fetch(TileCacheItem * item)
 {
-    std::cout << "Fetch request: " << item->id() << std::endl;
     _fetcher.enqueue(FetchJob(item));
 }
 
 void TileCache::request_download(TileCacheItem * item)
 {
-    std::cout << "Download request: " << item->id() << std::endl;
     _downloader.enqueue(DownloadJob(item));
 }
 

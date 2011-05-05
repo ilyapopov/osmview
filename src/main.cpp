@@ -29,7 +29,6 @@
 
 int main(int argc, char ** argv)
 {
-    std::cout << "Starting..." << std::endl;
     SDL_Init(SDL_INIT_VIDEO);
     atexit(SDL_Quit);
     
@@ -60,7 +59,6 @@ int main(int argc, char ** argv)
             switch(event.type)
             {
                 case SDL_QUIT:
-                    std::cout << "Exiting..." << std::endl;
                     return 0;
                 case SDL_KEYDOWN:
                     switch(event.key.keysym.sym)

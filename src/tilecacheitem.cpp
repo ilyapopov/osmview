@@ -19,8 +19,6 @@
 
 #include "tilecacheitem.hpp"
 
-#include <iostream>
-
 #include <boost/filesystem.hpp>
 #include <curl/curl.h>
 #include <SDL/SDL_image.h>
@@ -58,7 +56,6 @@ bool TileCacheItem::fetch()
 
     lock.unlock();
 
-    std::cout << "Fetching " << _file_name << " ..." << std::endl;
     SDL_Surface * s = IMG_Load(_file_name.c_str());
 
     lock.lock();
@@ -87,8 +84,6 @@ bool TileCacheItem::download()
 
     lock.unlock();
 
-    std::cout << "Downloading " << _url << " ..." << std::endl;
-    
     boost::filesystem::path path(_file_name);
     
     boost::filesystem::create_directories(path.parent_path());
