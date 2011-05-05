@@ -20,6 +20,8 @@
 #ifndef TIMER_HPP_INCLUDED
 #define TIMER_HPP_INCLUDED
 
+#include <time.h>
+
 class Timer
 {
 
@@ -28,9 +30,21 @@ class Timer
     
 public:
 
-    Timer();
+    Timer()
+    :
+        _started(now()),
+        _last(_started)
+    {
+    }
     
-    double now() const;
+    static double now()
+    {
+        timespec ts;
+        
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        
+        return ts.tv_sec + 1e-09 * ts.tv_nsec;
+    }
 
     double time() const
     {
