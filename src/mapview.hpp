@@ -27,11 +27,12 @@
 class Mapview
 {
     static const int _tile_size = 256;
-    static const double _v0 = 2.0;
+    static const int _max_level = 17; 
     static const std::string _tile_dir;
     static const std::string _url_base;
-    static const int _max_level = 15; 
-    static const double _tau = 0.3;
+
+    static constexpr double _v0 = 2.0;
+    static constexpr double _tau = 0.3;
 
     double _mapx;
     double _mapy;
