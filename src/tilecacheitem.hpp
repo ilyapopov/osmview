@@ -20,7 +20,7 @@
 #ifndef TILECACHEITEM_HPP_INCLUDED
 #define TILECACHEITEM_HPP_INCLUDED
 
-#include <thread>
+#include <mutex>
 #include <string>
 
 #include <SDL/SDL.h>
