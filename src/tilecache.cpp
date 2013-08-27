@@ -32,12 +32,12 @@ TileCache::TileCache(const std::string tile_dir, const std::string url_base)
 
 TileCache::~TileCache()
 {
-    for(map_t::iterator i = _cache.begin(); i != _cache.end(); ++i)
+    for(auto i: _cache)
     {
-        if(i->second != NULL)
+        if(i.second != NULL)
         {
-            delete i->second;
-            i->second = NULL;
+            delete i.second;
+            i.second = NULL;
         }
     }
 }
@@ -58,9 +58,7 @@ TileCacheItem * TileCache::get_tile(int level, int i, int j)
         std::string file_name = make_file_name(level, i, j);
         std::string url = make_url(level, i, j);
         
-        TileCacheItem * item = new TileCacheItem(this, key, file_name, url);
-        
-        p = _cache.insert(make_pair(key, item)).first;
+        p = _cache.insert(std::make_pair(key, new TileCacheItem(this, key, file_name, url))).first;
     }
 
     return p->second;
@@ -94,12 +92,12 @@ std::string TileCache::make_url(int level, int i, int j)
 
 void TileCache::request_fetch(TileCacheItem * item)
 {
-    _fetcher.enqueue(FetchJob(item));
+    _fetcher.push(FetchJob(item));
 }
 
 void TileCache::request_download(TileCacheItem * item)
 {
-    _downloader.enqueue(DownloadJob(item));
+    _downloader.push(DownloadJob(item));
 }
 
 void TileCache::clear_queues()
