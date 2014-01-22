@@ -103,9 +103,11 @@ bool Mapview::render(SDL_Surface * surface)
             int i1 = (i < 0) ? (i + n) : ((i >= n) ? (i-n) : i);
             
             TileCacheItem * tile_item = _cache.get_tile(_level, i1, j);
+            if (tile_item == nullptr)
+                continue;
 
             SDL_Surface * tile = tile_item->get_surface_locked();
-            if(tile == NULL)
+            if (tile == nullptr)
             {
                 tile_item->surface_unlock();
                 continue;
