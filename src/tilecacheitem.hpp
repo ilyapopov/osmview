@@ -41,7 +41,7 @@ class TileCacheItem
 
 public:
 
-    TileCacheItem(TileCache * cache, const std::string _id, const std::string file_name, const std::string url);
+    TileCacheItem(TileCache * cache, const std::string & _id, const std::string & file_name, const std::string & url);
     
     ~TileCacheItem();
     

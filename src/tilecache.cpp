@@ -21,7 +21,7 @@
 
 #include <sstream>
 
-TileCache::TileCache(const std::string tile_dir, const std::string url_base)
+TileCache::TileCache(const std::string &tile_dir, const std::string &url_base)
 :
     _tile_dir(tile_dir),
     _url_base(url_base),

@@ -25,7 +25,7 @@
 
 #include "tilecache.hpp"
 
-TileCacheItem::TileCacheItem(TileCache * cache, const std::string id, const std::string file_name, const std::string url)
+TileCacheItem::TileCacheItem(TileCache * cache, const std::string &id, const std::string &file_name, const std::string &url)
 :
     _id(id),
     _file_name(file_name),
