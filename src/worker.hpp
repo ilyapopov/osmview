@@ -41,7 +41,7 @@ class WorkerPool
 public:
     WorkerPool(int nthreads = 1);
     WorkerPool(const WorkerPool &) = delete;
-    void operator =(const WorkerPool &) = delete;
+    WorkerPool<job_type> & operator =(const WorkerPool &) = delete;
     ~WorkerPool();
     
     void push(const job_type & job);

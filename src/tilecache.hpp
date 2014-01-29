@@ -77,7 +77,7 @@ class TileCache
     WorkerPool<DownloadJob> _downloader;
     
 public:
-    TileCache(const std::string tile_dir, const std::string url_base);
+    TileCache(const std::string & tile_dir, const std::string & url_base);
     ~TileCache();
     
     TileCacheItem * get_tile(int level, int i, int j);
