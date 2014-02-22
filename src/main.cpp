@@ -35,13 +35,17 @@ int main(int argc, char ** argv)
     curl_global_init(CURL_GLOBAL_ALL);
     atexit(curl_global_cleanup);
     
-    SDL_WM_SetCaption("OSMview", NULL);
-    
-    SDL_Surface *screen;
-    
-    screen = set_video_mode(1024, 768);
-    
-    Mapview mv;
+    SDL_Window *sdlWindow;
+    SDL_Renderer *sdlRenderer;
+    SDL_CreateWindowAndRenderer(800, 600, SDL_WINDOW_RESIZABLE, &sdlWindow, &sdlRenderer);
+
+    if (sdlRenderer == nullptr || sdlWindow == nullptr)
+    {
+        std::cerr << "FATAL: Cannot create window or renderer" << std::endl;
+        return 1;
+    }
+
+    Mapview mv(sdlRenderer);
     Timer motion_timer;
     
     bool mouse_pan = false;
@@ -49,7 +53,7 @@ int main(int argc, char ** argv)
 
     while(1)
     {
-        SDL_Delay(20);
+        SDL_Delay(10);
 
         // 1. Process events
     
@@ -58,79 +62,72 @@ int main(int argc, char ** argv)
         {
             switch(event.type)
             {
-                case SDL_QUIT:
-                    return 0;
-                case SDL_KEYDOWN:
-                    switch(event.key.keysym.sym)
-                    {
-                        case SDLK_MINUS:
-                            mv.zoom(-1);
-                            break;
-                        case SDLK_EQUALS:
-                            mv.zoom(1);
-                            break;
-                        case SDLK_F11:
-                            //SDL_WM_ToggleFullScreen(screen);
-                            break;
-                        default:
-                            break;
-                    }
+            case SDL_QUIT:
+                return 0;
+            case SDL_KEYDOWN:
+                switch(event.key.keysym.scancode)
+                {
+                case SDL_SCANCODE_MINUS:
+                    mv.zoom(-1);
                     break;
-                case SDL_VIDEORESIZE:
-                    screen = set_video_mode(event.resize.w, event.resize.h);
+                case SDL_SCANCODE_EQUALS:
+                    mv.zoom(1);
                     break;
-                case SDL_VIDEOEXPOSE:
-                    //nothing
-                    break;
-                case SDL_MOUSEMOTION:
-                    //mv.move_pix_hard(event.motion.x, event.motion.y);
-                    break;
-                case SDL_MOUSEBUTTONDOWN:
-                    switch(event.button.button)
-                    {
-                        case SDL_BUTTON_WHEELUP:
-                            mv.zoom(1);
-                            break;
-                        case SDL_BUTTON_WHEELDOWN:
-                            mv.zoom(-1);
-                            break;
-                        case SDL_BUTTON_LEFT:
-                            mouse_pan = true;
-                            SDL_GetRelativeMouseState(&mousex, &mousey);
-                        default:
-                            break;
-                    }
-                    break;
-                case SDL_MOUSEBUTTONUP:
-                    switch(event.button.button)
-                    {
-                        case SDL_BUTTON_LEFT:
-                            mouse_pan = false;
-                        default:
-                            break;
-                    }
+                case SDL_SCANCODE_F11:
+                    //SDL_WM_ToggleFullScreen(screen);
                     break;
                 default:
                     break;
+                }
+                break;
+            case SDL_WINDOWEVENT_RESIZED:
+                break;
+            case SDL_MOUSEMOTION:
+                //mv.move_pix_hard(event.motion.x, event.motion.y);
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                switch(event.button.button)
+                {
+                case SDL_BUTTON_LEFT:
+                    mouse_pan = true;
+                    SDL_GetRelativeMouseState(&mousex, &mousey);
+                default:
+                    break;
+                }
+                break;
+            case SDL_MOUSEBUTTONUP:
+                switch(event.button.button)
+                {
+                case SDL_BUTTON_LEFT:
+                    mouse_pan = false;
+                default:
+                    break;
+                }
+                break;
+            case SDL_MOUSEWHEEL:
+                mv.zoom(event.wheel.y);
+                break;
+            default:
+                break;
             }
         }
         
         // 2. Process key states
         
-        Uint8 *keystate = SDL_GetKeyState(NULL);
-        if(keystate[SDLK_LEFT])
+        const Uint8 *keystate = SDL_GetKeyboardState(nullptr);
+        if(keystate[SDL_SCANCODE_LEFT])
         {
             mv.move(-1, 0);
         }
-        if(keystate[SDLK_RIGHT])
+        if(keystate[SDL_SCANCODE_RIGHT])
         {
             mv.move(1, 0);
         }
-        if(keystate[SDLK_UP])
+        if(keystate[SDL_SCANCODE_UP])
         {
             mv.move(0, -1);
         }
-        if(keystate[SDLK_DOWN])
+        if(keystate[SDL_SCANCODE_DOWN])
         {
             mv.move(0, 1);
         }
@@ -147,25 +144,10 @@ int main(int argc, char ** argv)
         
         // 4. Render the screen
         
-        if(!(SDL_GetAppState() & SDL_APPACTIVE))
-            continue;
+        mv.render(sdlRenderer);
         
-        mv.render(screen);
-        
-        SDL_Flip(screen);
+        SDL_RenderPresent(sdlRenderer);
     }
     
     return 0;
 }
-
-SDL_Surface * set_video_mode(int w, int h)
-{
-    SDL_Surface * screen = SDL_SetVideoMode(w, h, 32, SDL_RESIZABLE);
-    if (screen == NULL)
-    {
-        std::cerr << "Unable to set video: " << SDL_GetError() << std::endl;
-        exit(1);
-    }
-    return screen;
-}
-

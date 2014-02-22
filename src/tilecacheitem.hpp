@@ -23,7 +23,7 @@
 #include <mutex>
 #include <string>
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
 class TileCache;
 
@@ -33,6 +33,7 @@ class TileCacheItem
     const std::string _file_name;
     const std::string _url;
     SDL_Surface * _surface;
+    SDL_Texture * _texture;
     std::mutex _mutex;
     bool _busy;
     bool _queued;
@@ -48,9 +49,9 @@ public:
     bool fetch();
     bool download();
         
-    SDL_Surface * get_surface_locked();
+    SDL_Texture * get_texture_locked();
     
-    void surface_unlock();
+    void unlock();
     
     std::string id() const
     {

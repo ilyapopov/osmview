@@ -21,12 +21,13 @@
 
 #include <sstream>
 
-TileCache::TileCache(const std::string &tile_dir, const std::string &url_base)
+TileCache::TileCache(const std::string &tile_dir, const std::string &url_base, SDL_Renderer *renderer)
 :
     _tile_dir(tile_dir),
     _url_base(url_base),
     _fetcher(2),
-    _downloader(4)
+    _downloader(4),
+    _renderer(renderer)
 {
 }
 
@@ -34,20 +35,17 @@ TileCache::~TileCache()
 {
     for(auto i: _cache)
     {
-        if(i.second != NULL)
-        {
-            delete i.second;
-            i.second = NULL;
-        }
+        delete i.second;
+        i.second = nullptr;
     }
 }
 
 TileCacheItem * TileCache::get_tile(int level, int i, int j)
 {
     if(level < 0 )
-        return NULL;
+        return nullptr;
     if(i < 0 || j < 0 || i >= (1<<level) || j >= (1<<level))
-        return NULL;
+        return nullptr;
 
     key_t key = make_key(level, i, j);
     

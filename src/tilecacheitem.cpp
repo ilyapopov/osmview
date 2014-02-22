@@ -21,7 +21,7 @@
 
 #include <boost/filesystem.hpp>
 #include <curl/curl.h>
-#include <SDL/SDL_image.h>
+#include <SDL2/SDL_image.h>
 
 #include "tilecache.hpp"
 
@@ -30,7 +30,8 @@ TileCacheItem::TileCacheItem(TileCache * cache, const std::string &id, const std
     _id(id),
     _file_name(file_name),
     _url(url),
-    _surface(NULL),
+    _surface(nullptr),
+    _texture(nullptr),
     _busy(false),
     _queued(false),
     _cache(cache)
@@ -41,8 +42,11 @@ TileCacheItem::~TileCacheItem()
 {
     std::lock_guard<std::mutex> lock(_mutex);
 
-    if(_surface != NULL)
+    if(_surface != nullptr)
         SDL_FreeSurface(_surface);
+
+    if(_texture != nullptr)
+        SDL_DestroyTexture(_texture);
 }
 
 bool TileCacheItem::fetch()
@@ -60,10 +64,15 @@ bool TileCacheItem::fetch()
 
     lock.lock();
 
-    if(s == NULL)
+    if(s == nullptr)
+    {
+        //std::cerr << "Loading failed " << _file_name << std::endl;
+        //std::cerr << "Requesting dowloading " << _file_name << std::endl;
         _cache->request_download(this);
+    }
     else
     {
+        //std::cerr << "Loaded " << _file_name << std::endl;
         _surface = s;
         _queued = false;
     }
@@ -108,19 +117,29 @@ bool TileCacheItem::download()
     return true;
 }
 
-SDL_Surface * TileCacheItem::get_surface_locked()
+SDL_Texture * TileCacheItem::get_texture_locked()
 {
     _mutex.lock();
-    if(_surface == NULL && !_queued && !_busy)
+    if (_surface == nullptr && !_queued && !_busy)
     {
+        //std::cerr << "Requesting loading " << _file_name << std::endl;
         _cache->request_fetch(this);
         _queued = true;
     }
-    return _surface;
+
+    // Texture oprations are not thread safe, thus done here
+    if (_surface != nullptr && _texture == nullptr)
+    {
+        //std::cerr << "Creating texture from surface " << _id << std::endl;
+        _texture = SDL_CreateTextureFromSurface(_cache->renderer(), _surface);
+        if (_texture == nullptr)
+            std::cerr << "Texture creation failed" << _id << std::endl;
+    }
+
+    return _texture;
 }
 
-void TileCacheItem::surface_unlock()
+void TileCacheItem::unlock()
 {
     _mutex.unlock();
 }
-
