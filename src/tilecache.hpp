@@ -75,9 +75,11 @@ class TileCache
     
     WorkerPool<FetchJob> _fetcher;
     WorkerPool<DownloadJob> _downloader;
+
+    SDL_Renderer * _renderer;
     
 public:
-    TileCache(const std::string & tile_dir, const std::string & url_base);
+    TileCache(const std::string & tile_dir, const std::string & url_base, SDL_Renderer * renderer);
     ~TileCache();
     
     TileCacheItem * get_tile(int level, int i, int j);
@@ -86,6 +88,11 @@ public:
     void request_download(TileCacheItem * item);
     
     void clear_queues();
+
+    SDL_Renderer * renderer()
+    {
+        return _renderer;
+    }
 };
 
 #endif

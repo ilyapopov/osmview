@@ -26,13 +26,13 @@
 #include "timer.hpp"
 
 const std::string Mapview::_tile_dir("/home/ipopov/.cache/maps/tile.openstreetmap.org/");
-const std::string Mapview::_url_base("http://c.tile.openstreetmap.org/");
+const std::string Mapview::_url_base("http://tile.openstreetmap.org/");
 
-Mapview::Mapview()
+Mapview::Mapview(SDL_Renderer * renderer)
     : _mapx(0.5), _mapy(0.5),   
     _vx(0.0), _vy(0.0), _fx(0.0), _fy(0.0),
     _level(1),
-    _cache(_tile_dir, _url_base)
+    _cache(_tile_dir, _url_base, renderer)
 {
 }
 
@@ -69,14 +69,16 @@ int Mapview::zoom(int step)
     return _level;
 }
 
-bool Mapview::render(SDL_Surface * surface)
+bool Mapview::render(SDL_Renderer * renderer)
 {
-    SDL_FillRect(surface, NULL, 0);
+    SDL_RenderClear(renderer);
     
     int n = 1 << _level;
 
-    int w = surface->w;
-    int h = surface->h;
+    int w = 0;
+    int h = 0;
+
+    SDL_GetRendererOutputSize(renderer, &w, &h);
 
     double xc = _mapx * n;
     double yc = _mapy * n;
@@ -106,19 +108,20 @@ bool Mapview::render(SDL_Surface * surface)
             if (tile_item == nullptr)
                 continue;
 
-            SDL_Surface * tile = tile_item->get_surface_locked();
+            SDL_Texture * tile = tile_item->get_texture_locked();
             if (tile == nullptr)
             {
-                tile_item->surface_unlock();
+                tile_item->unlock();
                 continue;
             }
 
-            Sint16 a = static_cast<Sint16>(floor((w/2) + _tile_size * (i - xc)));
-            Sint16 b = static_cast<Sint16>(floor((h/2) + _tile_size * (j - yc)));
+            int a = floor((w/2) + _tile_size * (i - xc));
+            int b = floor((h/2) + _tile_size * (j - yc));
                 
-            SDL_Rect rect = {a, b, 0, 0};
-            SDL_BlitSurface(tile, NULL, surface, &rect);
-            tile_item->surface_unlock();
+            SDL_Rect rect = {a, b, _tile_size, _tile_size};
+            SDL_RenderCopy(renderer, tile, nullptr, &rect);
+
+            tile_item->unlock();
         }
     }
     

@@ -20,7 +20,7 @@
 #ifndef MAPVIEW_HPP_INCLUDED
 #define MAPVIEW_HPP_INCLUDED
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
 #include "tilecache.hpp"
 
@@ -46,7 +46,7 @@ class Mapview
 
 public:
 
-    Mapview();
+    Mapview(SDL_Renderer * renderer);
     
     void center_on(double lat, double lon);
     void move(double move_x, double move_y);
@@ -55,7 +55,7 @@ public:
     
     int zoom(int step);
     
-    bool render(SDL_Surface * surface);
+    bool render(SDL_Renderer *renderer);
 };
 
 #endif
