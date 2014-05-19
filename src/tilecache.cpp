@@ -33,7 +33,7 @@ TileCache::TileCache(const std::string &tile_dir, const std::string &url_base, S
 
 TileCache::~TileCache()
 {
-    for(auto i: _cache)
+    for(auto&& i: _cache)
     {
         delete i.second;
         i.second = nullptr;
