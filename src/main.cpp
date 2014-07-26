@@ -17,12 +17,11 @@
     along with osmview.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "main.hpp"
-
 #include <cstdlib>
 #include <iostream>
 
 #include <curl/curl.h>
+#include "SDL2/SDL.h"
 
 #include "mapview.hpp"
 #include "timer.hpp"
@@ -144,7 +143,7 @@ int main(int argc, char ** argv)
         
         // 4. Render the screen
         
-        mv.render(sdlRenderer);
+        mv.render();
         
         SDL_RenderPresent(sdlRenderer);
     }

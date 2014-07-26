@@ -20,24 +20,26 @@
 #ifndef TILECACHE_HPP_INCLUDED
 #define TILECACHE_HPP_INCLUDED
 
-#include <map>
+#include <unordered_map>
 #include <string>
 
-#include "tilecacheitem.hpp"
+#include <SDL2/SDL_render.h>
+
 #include "worker.hpp"
+#include "tilecacheitem.hpp"
 
 class FetchJob
 {
-    TileCacheItem * _item;
-    
+    TileCacheItem * item_;
+
 public:
     FetchJob(TileCacheItem * item)
-    : _item(item)
+    : item_(item)
     {}
-    
+
     void operator()()
     {
-        _item->fetch();
+        item_->fetch();
     }
 };
 
@@ -45,16 +47,16 @@ public:
 
 class DownloadJob
 {
-    TileCacheItem * _item;
-    
+    TileCacheItem * item_;
+
 public:
     DownloadJob(TileCacheItem * item)
-    : _item(item)
+    : item_(item)
     {}
-    
+
     void operator()()
     {
-        _item->download();
+        item_->download();
     }
 };
 
@@ -63,35 +65,35 @@ public:
 class TileCache
 {
     typedef std::string key_t;
-    typedef std::map<key_t, TileCacheItem *> map_t;
+    typedef std::unordered_map<key_t, TileCacheItem *> map_t;
 
-    std::string _tile_dir;
-    std::string _url_base;
-    map_t _cache;
+    std::string tile_dir_;
+    std::string url_base_;
+    map_t cache_;
     
     static key_t make_key(int level, int i, int j);
     std::string make_file_name(int level, int i, int j);
     std::string make_url(int level, int i, int j);
     
-    WorkerPool<FetchJob> _fetcher;
-    WorkerPool<DownloadJob> _downloader;
+    WorkerPool<FetchJob> fetcher_;
+    WorkerPool<DownloadJob> downloader_;
 
-    SDL_Renderer * _renderer;
+    SDL_Renderer * renderer_;
     
 public:
     TileCache(const std::string & tile_dir, const std::string & url_base, SDL_Renderer * renderer);
     ~TileCache();
     
-    TileCacheItem * get_tile(int level, int i, int j);
+    SDL_Texture * get_texture(int level, int i, int j);
     
     void request_fetch(TileCacheItem * item);
     void request_download(TileCacheItem * item);
-    
+
     void clear_queues();
 
     SDL_Renderer * renderer()
     {
-        return _renderer;
+        return renderer_;
     }
 };
 

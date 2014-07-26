@@ -20,29 +20,33 @@
 #ifndef MAPVIEW_HPP_INCLUDED
 #define MAPVIEW_HPP_INCLUDED
 
+#include <string>
+
 #include <SDL2/SDL.h>
 
 #include "tilecache.hpp"
 
 class Mapview
 {
-    static const int _tile_size = 256;
-    static const int _max_level = 17; 
-    static const std::string _tile_dir;
-    static const std::string _url_base;
+    static const int tile_size_ = 256;
+    static const int max_level_ = 17;
+    static const std::string tile_dir_;
+    static const std::string url_base_;
 
-    static constexpr double _v0 = 2.0;
-    static constexpr double _tau = 0.3;
+    static constexpr double v0_ = 2.0;
+    static constexpr double tau_ = 0.3;
 
-    double _mapx;
-    double _mapy;
+    double mapx_;
+    double mapy_;
     
-    double _vx, _vy;
-    double _fx, _fy;
+    double vx_, vy_;
+    double fx_, fy_;
     
-    int _level;
+    int level_;
     
-    TileCache _cache;
+    TileCache cache_;
+
+    SDL_Renderer * renderer_;
 
 public:
 
@@ -55,7 +59,7 @@ public:
     
     int zoom(int step);
     
-    bool render(SDL_Renderer *renderer);
+    bool render();
 };
 
 #endif
