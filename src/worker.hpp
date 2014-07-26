@@ -24,38 +24,39 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <utility>
 #include <vector>
 
 template <typename job_type>
 class WorkerPool
 {
-    std::mutex _mutex;
-    std::condition_variable _new_commands;
-    std::queue<job_type> _queue;
-    bool _stop;
-    std::vector<std::thread> _threads;
+    std::mutex mutex_;
+    std::condition_variable cond_;
+    std::queue<job_type> queue_;
+    bool stop_;
+    std::vector<std::thread> threads_;
 
     static int worker_thread(void * param);
     void stop();
 
 public:
-    WorkerPool(int nthreads = 1);
+    explicit WorkerPool(size_t nthreads = 1);
     WorkerPool(const WorkerPool &) = delete;
     WorkerPool<job_type> & operator =(const WorkerPool &) = delete;
     ~WorkerPool();
     
-    void push(const job_type & job);
-    void clear();
+    template<typename ArgType>
+    void enqueue(ArgType &&job);
 };
 
 template <typename job_type>
-WorkerPool<job_type>::WorkerPool(int nthreads)
+WorkerPool<job_type>::WorkerPool(size_t nthreads)
 : 
-    _stop(false)
+    stop_(false)
 {
-    for(int i = 0; i < nthreads; i++)
+    for(size_t i = 0; i < nthreads; ++i)
     {
-        _threads.push_back(std::thread(worker_thread, this));
+        threads_.emplace_back(worker_thread, this);
     }
 }
 
@@ -63,24 +64,29 @@ template <typename job_type>
 WorkerPool<job_type>::~WorkerPool()
 {
     stop();
+
+    for(auto&& t: threads_)
+    {
+        t.join();
+    }
 }
 
 template <typename job_type>
 int WorkerPool<job_type>::worker_thread(void * param)
 {
-    WorkerPool * worker = reinterpret_cast<WorkerPool *>(param);
+    WorkerPool * pool = reinterpret_cast<WorkerPool *>(param);
     
-    std::unique_lock<std::mutex> lock(worker->_mutex);
-    while(!worker->_stop)
+    std::unique_lock<std::mutex> lock(pool->mutex_);
+    while(!pool->stop_)
     {
-        if(worker->_queue.empty())
+        if(pool->queue_.empty())
         {
-            worker->_new_commands.wait(lock);
+            pool->cond_.wait(lock);
             continue;
         }
         
-        job_type job = worker->_queue.front();
-        worker->_queue.pop();
+        job_type job(std::move(pool->queue_.front()));
+        pool->queue_.pop();
         
         lock.unlock();
         
@@ -93,37 +99,20 @@ int WorkerPool<job_type>::worker_thread(void * param)
     return 0;
 }
 
-template <typename job_type>
-void WorkerPool<job_type>::push(const job_type &job)
+template <typename job_type> template <typename ArgType>
+void WorkerPool<job_type>::enqueue(ArgType &&job)
 {
-    std::lock_guard<std::mutex> lock(_mutex);
-
-    _queue.push(job);
-    _new_commands.notify_one();
+    std::lock_guard<std::mutex> lock(mutex_);
+    queue_.emplace(std::forward<ArgType>(job));
+    cond_.notify_one();
 }
 
 template <typename job_type>
 void WorkerPool<job_type>::stop()
 {
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        _stop = true;
-        _new_commands.notify_all();
-    }
-
-    for(auto& t: _threads)
-    {
-        t.join();
-    }
-}
-
-template <typename job_type>
-void WorkerPool<job_type>::clear()
-{
-    std::lock_guard<std::mutex> lock(_mutex);
-    
-    while(!_queue.empty())
-        _queue.pop();
+    std::lock_guard<std::mutex> lock(mutex_);
+    stop_ = true;
+    cond_.notify_all();
 }
 
 #endif

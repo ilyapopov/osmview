@@ -26,6 +26,8 @@
 
 const std::string Mapview::tile_dir_("/home/ipopov/.cache/maps/tile.openstreetmap.org/");
 const std::string Mapview::url_base_("http://tile.openstreetmap.org/");
+const double Mapview::v0_ = 2.0;
+const double Mapview::tau_ = 0.3;
 
 Mapview::Mapview(SDL_Renderer * renderer)
     : mapx_(0.5), mapy_(0.5),

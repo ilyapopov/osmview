@@ -33,24 +33,10 @@ TileCacheItem::TileCacheItem(TileCache * cache, const std::string &id, const std
     id_(id),
     file_name_(file_name),
     url_(url),
-    surface_(nullptr),
-    texture_(nullptr),
     busy_(false),
     queued_(false),
     cache_(cache)
-{
-}
-    
-TileCacheItem::~TileCacheItem()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    if(surface_ != nullptr)
-        SDL_FreeSurface(surface_);
-
-    if(texture_ != nullptr)
-        SDL_DestroyTexture(texture_);
-}
+{}
 
 bool TileCacheItem::fetch()
 {
@@ -73,7 +59,7 @@ bool TileCacheItem::fetch()
     }
     else
     {
-        surface_ = s;
+        surface_.reset(s);
         queued_ = false;
     }
 
@@ -120,19 +106,19 @@ bool TileCacheItem::download()
 SDL_Texture * TileCacheItem::get_texture()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (surface_ == nullptr && !queued_ && !busy_)
+    if (!surface_ && !queued_ && !busy_)
     {
         cache_->request_fetch(this);
         queued_ = true;
     }
 
     // Texture oprations are not thread safe, thus done here
-    if (surface_ != nullptr && texture_ == nullptr)
+    if (surface_ && !texture_)
     {
-        texture_ = SDL_CreateTextureFromSurface(cache_->renderer(), surface_);
-        if (texture_ == nullptr)
-            std::cerr << "Texture creation failed" << id_ << std::endl;
+        texture_.reset(SDL_CreateTextureFromSurface(cache_->renderer(), surface_.get()));
+        if (!texture_)
+            std::cerr << "Texture creation failed " << id_ << std::endl;
     }
 
-    return texture_;
+    return texture_.get();
 }

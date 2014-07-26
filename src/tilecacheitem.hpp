@@ -20,6 +20,7 @@
 #ifndef TILECACHEITEM_HPP_INCLUDED
 #define TILECACHEITEM_HPP_INCLUDED
 
+#include <memory>
 #include <mutex>
 #include <string>
 
@@ -27,32 +28,37 @@
 
 class TileCache;
 
+struct SurfaceDeleter
+{
+    void operator()(SDL_Surface * s) {SDL_FreeSurface(s);}
+};
+
+struct TextureDeleter
+{
+    void operator()(SDL_Texture * t) {SDL_DestroyTexture(t);}
+};
+
 class TileCacheItem
 {
     const std::string id_;
     const std::string file_name_;
     const std::string url_;
-    SDL_Surface * surface_;
-    SDL_Texture * texture_;
+    std::unique_ptr<SDL_Surface, SurfaceDeleter> surface_;
+    std::unique_ptr<SDL_Texture, TextureDeleter> texture_;
     std::mutex mutex_;
     bool busy_;
     bool queued_;
-    
-    TileCache * cache_;
+    TileCache * const cache_;
 
 public:
 
     TileCacheItem(TileCache * cache, const std::string & id, const std::string & file_name, const std::string & url);
-    
-    ~TileCacheItem();
-    
+
     bool fetch();
     bool download();
-        
+
     SDL_Texture * get_texture();
-    
-    void unlock();
-    
+
     std::string id() const
     {
         return id_;
