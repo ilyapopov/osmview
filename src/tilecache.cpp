@@ -20,8 +20,7 @@
 #include "tilecache.hpp"
 
 #include <sstream>
-
-#include "tilecacheitem.hpp"
+#include <utility>
 
 TileCache::TileCache(const std::string &tile_dir, const std::string &url_base, SDL_Renderer *renderer)
 :
@@ -30,35 +29,26 @@ TileCache::TileCache(const std::string &tile_dir, const std::string &url_base, S
     fetcher_(2),
     downloader_(4),
     renderer_(renderer)
-{
-}
-
-TileCache::~TileCache()
-{
-    for(auto&& i: cache_)
-    {
-        delete i.second;
-        i.second = nullptr;
-    }
-}
+{}
 
 SDL_Texture * TileCache::get_texture(int level, int i, int j)
 {
-    if(level < 0 )
+    if (level < 0 )
         return nullptr;
-    if(i < 0 || j < 0 || i >= (1<<level) || j >= (1<<level))
+    if (i < 0 || j < 0 || i >= (1<<level) || j >= (1<<level))
         return nullptr;
 
     key_t key = make_key(level, i, j);
     
     map_t::iterator p = cache_.find(key);
 
-    if(p == cache_.end())
+    if (p == cache_.end())
     {
         std::string file_name = make_file_name(level, i, j);
         std::string url = make_url(level, i, j);
         
-        p = cache_.emplace(key, new TileCacheItem(this, key, file_name, url)).first;
+        std::unique_ptr<TileCacheItem> tci(new TileCacheItem(this, key, file_name, url));
+        p = cache_.emplace(key, std::move(tci)).first;
     }
 
     return p->second->get_texture();
@@ -72,7 +62,7 @@ TileCache::key_t TileCache::make_key(int level, int i, int j)
     return ss.str();
 }
 
-std::string TileCache::make_file_name(int level, int i, int j)
+std::string TileCache::make_file_name(int level, int i, int j) const
 {
     std::stringstream ss;
     ss << tile_dir_;
@@ -81,7 +71,7 @@ std::string TileCache::make_file_name(int level, int i, int j)
     return ss.str();
 }
 
-std::string TileCache::make_url(int level, int i, int j)
+std::string TileCache::make_url(int level, int i, int j) const
 {
     std::stringstream ss;
     ss << url_base_;
@@ -92,17 +82,10 @@ std::string TileCache::make_url(int level, int i, int j)
 
 void TileCache::request_fetch(TileCacheItem * item)
 {
-    fetcher_.push(FetchJob(item));
+    fetcher_.enqueue(item);
 }
 
 void TileCache::request_download(TileCacheItem * item)
 {
-    downloader_.push(DownloadJob(item));
+    downloader_.enqueue(item);
 }
-
-void TileCache::clear_queues()
-{
-    fetcher_.clear();
-    downloader_.clear();
-}
-

@@ -20,10 +20,11 @@
 #ifndef TILECACHE_HPP_INCLUDED
 #define TILECACHE_HPP_INCLUDED
 
-#include <unordered_map>
+#include <memory>
 #include <string>
+#include <unordered_map>
 
-#include <SDL2/SDL_render.h>
+#include <SDL2/SDL.h>
 
 #include "worker.hpp"
 #include "tilecacheitem.hpp"
@@ -65,33 +66,30 @@ public:
 class TileCache
 {
     typedef std::string key_t;
-    typedef std::unordered_map<key_t, TileCacheItem *> map_t;
+    typedef std::unordered_map<key_t, std::unique_ptr<TileCacheItem>> map_t;
 
     std::string tile_dir_;
     std::string url_base_;
     map_t cache_;
-    
-    static key_t make_key(int level, int i, int j);
-    std::string make_file_name(int level, int i, int j);
-    std::string make_url(int level, int i, int j);
     
     WorkerPool<FetchJob> fetcher_;
     WorkerPool<DownloadJob> downloader_;
 
     SDL_Renderer * renderer_;
     
+    static key_t make_key(int level, int i, int j);
+    std::string make_file_name(int level, int i, int j) const;
+    std::string make_url(int level, int i, int j) const;
+
 public:
     TileCache(const std::string & tile_dir, const std::string & url_base, SDL_Renderer * renderer);
-    ~TileCache();
     
     SDL_Texture * get_texture(int level, int i, int j);
     
     void request_fetch(TileCacheItem * item);
     void request_download(TileCacheItem * item);
 
-    void clear_queues();
-
-    SDL_Renderer * renderer()
+    SDL_Renderer * renderer() const
     {
         return renderer_;
     }

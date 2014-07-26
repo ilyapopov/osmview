@@ -26,7 +26,7 @@
 #include "mapview.hpp"
 #include "timer.hpp"
 
-int main(int argc, char ** argv)
+int main(int /*argc*/, char ** /*argv*/)
 {
     SDL_Init(SDL_INIT_VIDEO);
     atexit(SDL_Quit);
@@ -50,21 +50,21 @@ int main(int argc, char ** argv)
     bool mouse_pan = false;
     int mousex = 0, mousey = 0;
 
-    while(1)
+    while (true)
     {
         SDL_Delay(10);
 
         // 1. Process events
     
         SDL_Event event;
-        while(SDL_PollEvent(&event))
+        while (SDL_PollEvent(&event))
         {
-            switch(event.type)
+            switch (event.type)
             {
             case SDL_QUIT:
                 return 0;
             case SDL_KEYDOWN:
-                switch(event.key.keysym.scancode)
+                switch (event.key.keysym.scancode)
                 {
                 case SDL_SCANCODE_MINUS:
                     mv.zoom(-1);
@@ -85,7 +85,7 @@ int main(int argc, char ** argv)
                 //mv.move_pix_hard(event.motion.x, event.motion.y);
                 break;
             case SDL_MOUSEBUTTONDOWN:
-                switch(event.button.button)
+                switch (event.button.button)
                 {
                 case SDL_BUTTON_LEFT:
                     mouse_pan = true;
@@ -95,7 +95,7 @@ int main(int argc, char ** argv)
                 }
                 break;
             case SDL_MOUSEBUTTONUP:
-                switch(event.button.button)
+                switch (event.button.button)
                 {
                 case SDL_BUTTON_LEFT:
                     mouse_pan = false;
@@ -114,24 +114,24 @@ int main(int argc, char ** argv)
         // 2. Process key states
         
         const Uint8 *keystate = SDL_GetKeyboardState(nullptr);
-        if(keystate[SDL_SCANCODE_LEFT])
+        if (keystate[SDL_SCANCODE_LEFT])
         {
             mv.move(-1, 0);
         }
-        if(keystate[SDL_SCANCODE_RIGHT])
+        if (keystate[SDL_SCANCODE_RIGHT])
         {
             mv.move(1, 0);
         }
-        if(keystate[SDL_SCANCODE_UP])
+        if (keystate[SDL_SCANCODE_UP])
         {
             mv.move(0, -1);
         }
-        if(keystate[SDL_SCANCODE_DOWN])
+        if (keystate[SDL_SCANCODE_DOWN])
         {
             mv.move(0, 1);
         }
         
-        if(mouse_pan)
+        if (mouse_pan)
         {
             SDL_GetRelativeMouseState(&mousex, &mousey);
             mv.move_pix_hard(-mousex, -mousey);

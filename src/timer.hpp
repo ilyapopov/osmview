@@ -25,15 +25,15 @@
 class Timer
 {
 
-    double _started;
-    double _last;
+    double started_;
+    double last_;
     
 public:
 
     Timer()
     :
-        _started(now()),
-        _last(_started)
+        started_(now()),
+        last_(started_)
     {
     }
     
@@ -48,13 +48,13 @@ public:
 
     double time() const
     {
-        return now() - _started;
+        return now() - started_;
     }
     double delta()
     {
-        double lastlast = _last;
-        _last = now();
-        return _last - lastlast;
+        double lastlast = last_;
+        last_ = now();
+        return last_ - lastlast;
     }
 };
 
