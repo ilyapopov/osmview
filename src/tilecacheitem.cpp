@@ -19,6 +19,9 @@
 
 #include "tilecacheitem.hpp"
 
+#include <cstdio>
+#include <iostream>
+
 #include <boost/filesystem.hpp>
 #include <curl/curl.h>
 #include <SDL2/SDL_image.h>
@@ -27,73 +30,70 @@
 
 TileCacheItem::TileCacheItem(TileCache * cache, const std::string &id, const std::string &file_name, const std::string &url)
 :
-    _id(id),
-    _file_name(file_name),
-    _url(url),
-    _surface(nullptr),
-    _texture(nullptr),
-    _busy(false),
-    _queued(false),
-    _cache(cache)
+    id_(id),
+    file_name_(file_name),
+    url_(url),
+    surface_(nullptr),
+    texture_(nullptr),
+    busy_(false),
+    queued_(false),
+    cache_(cache)
 {
 }
     
 TileCacheItem::~TileCacheItem()
 {
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(mutex_);
 
-    if(_surface != nullptr)
-        SDL_FreeSurface(_surface);
+    if(surface_ != nullptr)
+        SDL_FreeSurface(surface_);
 
-    if(_texture != nullptr)
-        SDL_DestroyTexture(_texture);
+    if(texture_ != nullptr)
+        SDL_DestroyTexture(texture_);
 }
 
 bool TileCacheItem::fetch()
 {
-    std::unique_lock<std::mutex> lock(_mutex);
+    std::unique_lock<std::mutex> lock(mutex_);
 
-    if(_busy)
+    if(busy_)
         return true;
 
-    _busy = true;
+    busy_ = true;
 
     lock.unlock();
 
-    SDL_Surface * s = IMG_Load(_file_name.c_str());
+    SDL_Surface * s = IMG_Load(file_name_.c_str());
 
     lock.lock();
 
     if(s == nullptr)
     {
-        //std::cerr << "Loading failed " << _file_name << std::endl;
-        //std::cerr << "Requesting dowloading " << _file_name << std::endl;
-        _cache->request_download(this);
+        cache_->request_download(this);
     }
     else
     {
-        //std::cerr << "Loaded " << _file_name << std::endl;
-        _surface = s;
-        _queued = false;
+        surface_ = s;
+        queued_ = false;
     }
 
-    _busy = false;
+    busy_ = false;
 
     return true;
 }
 
 bool TileCacheItem::download()
 {
-    std::unique_lock<std::mutex> lock(_mutex);
+    std::unique_lock<std::mutex> lock(mutex_);
 
-    if(_busy)
+    if(busy_)
         return true;
 
-    _busy = true;
+    busy_ = true;
 
     lock.unlock();
 
-    boost::filesystem::path path(_file_name);
+    boost::filesystem::path path(file_name_);
     
     boost::filesystem::create_directories(path.parent_path());
 
@@ -101,7 +101,7 @@ bool TileCacheItem::download()
     if(file)
     {
         CURL * curl = curl_easy_init();
-        curl_easy_setopt(curl, CURLOPT_URL, _url.c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, url_.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
         curl_easy_perform(curl);
         curl_easy_cleanup(curl);
@@ -111,35 +111,28 @@ bool TileCacheItem::download()
     
     lock.lock();
 
-    _busy = false;
-    _queued = false;
+    busy_ = false;
+    queued_ = false;
     
     return true;
 }
 
-SDL_Texture * TileCacheItem::get_texture_locked()
+SDL_Texture * TileCacheItem::get_texture()
 {
-    _mutex.lock();
-    if (_surface == nullptr && !_queued && !_busy)
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (surface_ == nullptr && !queued_ && !busy_)
     {
-        //std::cerr << "Requesting loading " << _file_name << std::endl;
-        _cache->request_fetch(this);
-        _queued = true;
+        cache_->request_fetch(this);
+        queued_ = true;
     }
 
     // Texture oprations are not thread safe, thus done here
-    if (_surface != nullptr && _texture == nullptr)
+    if (surface_ != nullptr && texture_ == nullptr)
     {
-        //std::cerr << "Creating texture from surface " << _id << std::endl;
-        _texture = SDL_CreateTextureFromSurface(_cache->renderer(), _surface);
-        if (_texture == nullptr)
-            std::cerr << "Texture creation failed" << _id << std::endl;
+        texture_ = SDL_CreateTextureFromSurface(cache_->renderer(), surface_);
+        if (texture_ == nullptr)
+            std::cerr << "Texture creation failed" << id_ << std::endl;
     }
 
-    return _texture;
-}
-
-void TileCacheItem::unlock()
-{
-    _mutex.unlock();
+    return texture_;
 }

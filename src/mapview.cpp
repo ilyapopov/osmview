@@ -23,70 +23,70 @@
 #include <string>
 
 #include "coord.hpp"
-#include "timer.hpp"
 
-const std::string Mapview::_tile_dir("/home/ipopov/.cache/maps/tile.openstreetmap.org/");
-const std::string Mapview::_url_base("http://tile.openstreetmap.org/");
+const std::string Mapview::tile_dir_("/home/ipopov/.cache/maps/tile.openstreetmap.org/");
+const std::string Mapview::url_base_("http://tile.openstreetmap.org/");
 
 Mapview::Mapview(SDL_Renderer * renderer)
-    : _mapx(0.5), _mapy(0.5),   
-    _vx(0.0), _vy(0.0), _fx(0.0), _fy(0.0),
-    _level(1),
-    _cache(_tile_dir, _url_base, renderer)
+    : mapx_(0.5), mapy_(0.5),
+    vx_(0.0), vy_(0.0), fx_(0.0), fy_(0.0),
+    level_(1),
+    cache_(tile_dir_, url_base_, renderer),
+    renderer_(renderer)
 {
 }
 
 void Mapview::center_on(double lat, double lon)
 {
-    _mapx = lon2mapx(lon);
-    _mapy = lat2mapy(lat);
-    _vx = _vy = 0.0;
-    _fx = _fy = 0.0;
+    mapx_ = lon2mapx(lon);
+    mapy_ = lat2mapy(lat);
+    vx_ = vy_ = 0.0;
+    fx_ = fy_ = 0.0;
 }
 
 void Mapview::move(double move_x, double move_y)
 {
-    double scale = pow(2.0, _level);
-    _fx += _v0 * move_x / scale;
-    _fy += _v0 * move_y / scale;
+    double scale = pow(2.0, level_);
+    fx_ += v0_ * move_x / scale;
+    fy_ += v0_ * move_y / scale;
 }
 
 void Mapview::move_pix_hard(double dx, double dy)
 {
-    double scale = pow(2.0, _level);
-    _mapx += dx / _tile_size / scale;
-    _mapy += dy / _tile_size / scale;
+    double scale = pow(2.0, level_);
+    mapx_ += dx / tile_size_ / scale;
+    mapy_ += dy / tile_size_ / scale;
 }
 
 int Mapview::zoom(int step)
 {
-    _level += step;
-    if(_level < 0)
-        _level = 0;
-    else if(_level > _max_level)
-        _level = _max_level;
+    level_ += step;
+    if(level_ < 0)
+        level_ = 0;
+    else if(level_ > max_level_)
+        level_ = max_level_;
         
-    return _level;
+    return level_;
 }
 
-bool Mapview::render(SDL_Renderer * renderer)
+bool Mapview::render()
 {
-    SDL_RenderClear(renderer);
+    SDL_RenderClear(renderer_);
     
-    int n = 1 << _level;
+    int n = 1 << level_;
 
     int w = 0;
     int h = 0;
 
-    SDL_GetRendererOutputSize(renderer, &w, &h);
+    SDL_GetRendererOutputSize(renderer_, &w, &h);
 
-    double xc = _mapx * n;
-    double yc = _mapy * n;
+    double xc = mapx_ * n;
+    double yc = mapy_ * n;
     
-    double xmin = xc - 0.5 * w / _tile_size;
-    double xmax = xc + 0.5 * w / _tile_size;
-    double ymin = yc - 0.5 * h / _tile_size;
-    double ymax = yc + 0.5 * h / _tile_size;
+    double xmin = xc - 0.5 * w / tile_size_;
+    double xmax = xc + 0.5 * w / tile_size_;
+    double ymin = yc - 0.5 * h / tile_size_;
+    double ymax = yc + 0.5 * h / tile_size_;
     
     int imin = floor(xmin);
     int imax = ceil(xmax);
@@ -104,24 +104,17 @@ bool Mapview::render(SDL_Renderer * renderer)
             
             int i1 = (i < 0) ? (i + n) : ((i >= n) ? (i-n) : i);
             
-            TileCacheItem * tile_item = _cache.get_tile(_level, i1, j);
-            if (tile_item == nullptr)
-                continue;
-
-            SDL_Texture * tile = tile_item->get_texture_locked();
+            SDL_Texture * tile = cache_.get_texture(level_, i1, j);
             if (tile == nullptr)
             {
-                tile_item->unlock();
                 continue;
             }
 
-            int a = floor((w/2) + _tile_size * (i - xc));
-            int b = floor((h/2) + _tile_size * (j - yc));
+            int a = floor((w/2) + tile_size_ * (i - xc));
+            int b = floor((h/2) + tile_size_ * (j - yc));
                 
-            SDL_Rect rect = {a, b, _tile_size, _tile_size};
-            SDL_RenderCopy(renderer, tile, nullptr, &rect);
-
-            tile_item->unlock();
+            SDL_Rect rect = {a, b, tile_size_, tile_size_};
+            SDL_RenderCopy(renderer_, tile, nullptr, &rect);
         }
     }
     
@@ -130,21 +123,21 @@ bool Mapview::render(SDL_Renderer * renderer)
 
 void Mapview::motion_step(double dt)
 {
-    _vx += (_fx - _vx)*dt/_tau;
-    _vy += (_fy - _vy)*dt/_tau;
+    vx_ += (fx_ - vx_)*dt/tau_;
+    vy_ += (fy_ - vy_)*dt/tau_;
     
-    _fx = 0.0;
-    _fy = 0.0;
+    fx_ = 0.0;
+    fy_ = 0.0;
 
-    _mapy += _vy * dt;
-    if(_mapy < 0.0)
-        _mapy = 0.0;
-    else if(_mapy > 1.0)
-        _mapy = 1.0;
+    mapy_ += vy_ * dt;
+    if(mapy_ < 0.0)
+        mapy_ = 0.0;
+    else if(mapy_ > 1.0)
+        mapy_ = 1.0;
 
-    _mapx += _vx * dt;
-    if(_mapx < 0.0)
-        _mapx += 1.0; 
-    else if(_mapx > 1.0)
-        _mapx -= 1.0;
+    mapx_ += vx_ * dt;
+    if(mapx_ < 0.0)
+        mapx_ += 1.0;
+    else if(mapx_ > 1.0)
+        mapx_ -= 1.0;
 }

@@ -29,33 +29,33 @@ class TileCache;
 
 class TileCacheItem
 {
-    const std::string _id;
-    const std::string _file_name;
-    const std::string _url;
-    SDL_Surface * _surface;
-    SDL_Texture * _texture;
-    std::mutex _mutex;
-    bool _busy;
-    bool _queued;
+    const std::string id_;
+    const std::string file_name_;
+    const std::string url_;
+    SDL_Surface * surface_;
+    SDL_Texture * texture_;
+    std::mutex mutex_;
+    bool busy_;
+    bool queued_;
     
-    TileCache * _cache;
+    TileCache * cache_;
 
 public:
 
-    TileCacheItem(TileCache * cache, const std::string & _id, const std::string & file_name, const std::string & url);
+    TileCacheItem(TileCache * cache, const std::string & id, const std::string & file_name, const std::string & url);
     
     ~TileCacheItem();
     
     bool fetch();
     bool download();
         
-    SDL_Texture * get_texture_locked();
+    SDL_Texture * get_texture();
     
     void unlock();
     
     std::string id() const
     {
-        return _id;
+        return id_;
     }
 };
 

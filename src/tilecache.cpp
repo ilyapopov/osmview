@@ -21,26 +21,28 @@
 
 #include <sstream>
 
+#include "tilecacheitem.hpp"
+
 TileCache::TileCache(const std::string &tile_dir, const std::string &url_base, SDL_Renderer *renderer)
 :
-    _tile_dir(tile_dir),
-    _url_base(url_base),
-    _fetcher(2),
-    _downloader(4),
-    _renderer(renderer)
+    tile_dir_(tile_dir),
+    url_base_(url_base),
+    fetcher_(2),
+    downloader_(4),
+    renderer_(renderer)
 {
 }
 
 TileCache::~TileCache()
 {
-    for(auto&& i: _cache)
+    for(auto&& i: cache_)
     {
         delete i.second;
         i.second = nullptr;
     }
 }
 
-TileCacheItem * TileCache::get_tile(int level, int i, int j)
+SDL_Texture * TileCache::get_texture(int level, int i, int j)
 {
     if(level < 0 )
         return nullptr;
@@ -49,17 +51,17 @@ TileCacheItem * TileCache::get_tile(int level, int i, int j)
 
     key_t key = make_key(level, i, j);
     
-    map_t::iterator p = _cache.find(key);
+    map_t::iterator p = cache_.find(key);
 
-    if(p == _cache.end())
+    if(p == cache_.end())
     {
         std::string file_name = make_file_name(level, i, j);
         std::string url = make_url(level, i, j);
         
-        p = _cache.insert(std::make_pair(key, new TileCacheItem(this, key, file_name, url))).first;
+        p = cache_.emplace(key, new TileCacheItem(this, key, file_name, url)).first;
     }
 
-    return p->second;
+    return p->second->get_texture();
 }
 
 TileCache::key_t TileCache::make_key(int level, int i, int j)
@@ -73,7 +75,7 @@ TileCache::key_t TileCache::make_key(int level, int i, int j)
 std::string TileCache::make_file_name(int level, int i, int j)
 {
     std::stringstream ss;
-    ss << _tile_dir;
+    ss << tile_dir_;
     ss << level << '/' << i << '/' << j << ".png";
 
     return ss.str();
@@ -82,7 +84,7 @@ std::string TileCache::make_file_name(int level, int i, int j)
 std::string TileCache::make_url(int level, int i, int j)
 {
     std::stringstream ss;
-    ss << _url_base;
+    ss << url_base_;
     ss << level << '/' << i << '/' << j << ".png";
 
     return ss.str();
@@ -90,17 +92,17 @@ std::string TileCache::make_url(int level, int i, int j)
 
 void TileCache::request_fetch(TileCacheItem * item)
 {
-    _fetcher.push(FetchJob(item));
+    fetcher_.push(FetchJob(item));
 }
 
 void TileCache::request_download(TileCacheItem * item)
 {
-    _downloader.push(DownloadJob(item));
+    downloader_.push(DownloadJob(item));
 }
 
 void TileCache::clear_queues()
 {
-    _fetcher.clear();
-    _downloader.clear();
+    fetcher_.clear();
+    downloader_.clear();
 }
 
