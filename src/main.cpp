@@ -148,5 +148,7 @@ int main(int /*argc*/, char ** /*argv*/)
         SDL_RenderPresent(sdlRenderer);
     }
     
+    SDL_DestroyWindow(sdlWindow);
+    SDL_DestroyRenderer(sdlRenderer);
     return 0;
 }
