@@ -1,3 +1,5 @@
+find_package(Threads)
+
 #find_package(SDL REQUIRED)
 #link_libraries(${SDL_LIBRARY})
 #include_directories(${SDL_INCLUDEDIR})
@@ -6,7 +8,7 @@
 #link_libraries(${SDLIMAGE_LIBRARY})
 #include_directories(${SDLIMAGE_INCLUDEDIR})
 
-LINK_LIBRARIES(-lSDL2 -lSDL2_image)
+LINK_LIBRARIES(-lSDL2 -lSDL2_image ${CMAKE_THREAD_LIBS_INIT})
 
 find_package(CURL REQUIRED)
 link_libraries(${CURL_LIBRARIES})
