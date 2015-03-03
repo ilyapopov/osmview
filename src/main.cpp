@@ -34,17 +34,36 @@ int main(int /*argc*/, char ** /*argv*/)
     curl_global_init(CURL_GLOBAL_ALL);
     atexit(curl_global_cleanup);
     
-    SDL_Window *sdlWindow;
-    SDL_Renderer *sdlRenderer;
-    SDL_CreateWindowAndRenderer(800, 600, SDL_WINDOW_RESIZABLE, &sdlWindow, &sdlRenderer);
-
-    if (sdlRenderer == nullptr || sdlWindow == nullptr)
+    std::unique_ptr<SDL_Window, void(*)(SDL_Window*)> sdlWindow(
+        SDL_CreateWindow(
+            "OpenStreetMap viewer",
+            SDL_WINDOWPOS_UNDEFINED,
+            SDL_WINDOWPOS_UNDEFINED,
+            800,
+            600,
+            SDL_WINDOW_RESIZABLE
+        ), 
+        SDL_DestroyWindow);
+    if (!sdlWindow)
     {
-        std::cerr << "FATAL: Cannot create window or renderer" << std::endl;
+        std::cerr << "FATAL: Cannot SDL create window" << std::endl;
         return 1;
     }
 
-    Mapview mv(sdlRenderer);
+    std::unique_ptr<SDL_Renderer, void(*)(SDL_Renderer*)> sdlRenderer(
+        SDL_CreateRenderer(
+            sdlWindow.get(), 
+            -1, 
+            SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
+        ),
+        SDL_DestroyRenderer);
+    if (!sdlRenderer)
+    {
+        std::cerr << "FATAL: Cannot create SDL renderer" << std::endl;
+        return 1;
+    }
+
+    Mapview mv(sdlRenderer.get());
     Timer motion_timer;
     
     bool mouse_pan = false;
@@ -145,10 +164,8 @@ int main(int /*argc*/, char ** /*argv*/)
         
         mv.render();
         
-        SDL_RenderPresent(sdlRenderer);
+        SDL_RenderPresent(sdlRenderer.get());
     }
     
-    SDL_DestroyWindow(sdlWindow);
-    SDL_DestroyRenderer(sdlRenderer);
     return 0;
 }

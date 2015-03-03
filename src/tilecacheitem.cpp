@@ -89,6 +89,7 @@ bool TileCacheItem::download()
         CURL * curl = curl_easy_init();
         curl_easy_setopt(curl, CURLOPT_URL, url_.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10);
         curl_easy_perform(curl);
         curl_easy_cleanup(curl);
 

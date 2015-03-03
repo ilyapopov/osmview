@@ -30,30 +30,31 @@
 template <typename job_type>
 class WorkerPool
 {
+public:
+    explicit WorkerPool(size_t nthreads = 1);
+    ~WorkerPool();
+    
+    template<typename... ArgTypes>
+    void emplace(ArgTypes&&... args);
+    template<typename ArgType>
+    void push(ArgType&& job);
+    void stop();
+
+private:
     std::mutex mutex_;
     std::condition_variable cond_;
     std::queue<job_type> queue_;
-    bool stop_;
     std::vector<std::thread> threads_;
+    bool stop_;
 
-    static int worker_thread(void * param);
-    void stop();
-
-public:
-    explicit WorkerPool(size_t nthreads = 1);
-    WorkerPool(const WorkerPool &) = delete;
-    WorkerPool<job_type> & operator =(const WorkerPool &) = delete;
-    ~WorkerPool();
-    
-    template<typename ArgType>
-    void enqueue(ArgType &&job);
+    static int worker_thread(WorkerPool<job_type> * pool);
 };
 
 template <typename job_type>
 WorkerPool<job_type>::WorkerPool(size_t nthreads)
-: 
-    stop_(false)
+    : stop_(false)
 {
+    threads_.reserve(nthreads);
     for(size_t i = 0; i < nthreads; ++i)
     {
         threads_.emplace_back(worker_thread, this);
@@ -72,10 +73,8 @@ WorkerPool<job_type>::~WorkerPool()
 }
 
 template <typename job_type>
-int WorkerPool<job_type>::worker_thread(void * param)
+int WorkerPool<job_type>::worker_thread(WorkerPool<job_type> *pool)
 {
-    WorkerPool * pool = reinterpret_cast<WorkerPool *>(param);
-    
     std::unique_lock<std::mutex> lock(pool->mutex_);
     while(!pool->stop_)
     {
@@ -99,11 +98,19 @@ int WorkerPool<job_type>::worker_thread(void * param)
     return 0;
 }
 
-template <typename job_type> template <typename ArgType>
-void WorkerPool<job_type>::enqueue(ArgType &&job)
+template <typename job_type> template <typename... ArgTypes>
+void WorkerPool<job_type>::emplace(ArgTypes&&... args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    queue_.emplace(std::forward<ArgType>(job));
+    queue_.emplace(std::forward<ArgTypes>(args)...);
+    cond_.notify_one();
+}
+
+template <typename job_type> template <typename ArgType>
+void WorkerPool<job_type>::push(ArgType&& job)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    queue_.push(std::forward<ArgType>(job));
     cond_.notify_one();
 }
 

@@ -82,10 +82,10 @@ std::string TileCache::make_url(int level, int i, int j) const
 
 void TileCache::request_fetch(TileCacheItem * item)
 {
-    fetcher_.enqueue(item);
+    fetcher_.emplace(item);
 }
 
 void TileCache::request_download(TileCacheItem * item)
 {
-    downloader_.enqueue(item);
+    downloader_.emplace(item);
 }
