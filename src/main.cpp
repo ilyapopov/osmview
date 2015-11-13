@@ -34,7 +34,7 @@ int main(int /*argc*/, char ** /*argv*/)
     curl_global_init(CURL_GLOBAL_ALL);
     atexit(curl_global_cleanup);
     
-    std::unique_ptr<SDL_Window, void(*)(SDL_Window*)> sdlWindow(
+    std::unique_ptr<SDL_Window, void(*)(SDL_Window*)> window(
         SDL_CreateWindow(
             "OpenStreetMap viewer",
             SDL_WINDOWPOS_UNDEFINED,
@@ -44,26 +44,27 @@ int main(int /*argc*/, char ** /*argv*/)
             SDL_WINDOW_RESIZABLE
         ), 
         SDL_DestroyWindow);
-    if (!sdlWindow)
+    if (!window)
     {
-        std::cerr << "FATAL: Cannot SDL create window" << std::endl;
+        std::cerr << "FATAL: Cannot create SDL window" << std::endl;
         return 1;
     }
+    bool fullscreen = false;
 
-    std::unique_ptr<SDL_Renderer, void(*)(SDL_Renderer*)> sdlRenderer(
+    std::unique_ptr<SDL_Renderer, void(*)(SDL_Renderer*)> renderer(
         SDL_CreateRenderer(
-            sdlWindow.get(), 
+            window.get(),
             -1, 
             SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
         ),
         SDL_DestroyRenderer);
-    if (!sdlRenderer)
+    if (!renderer)
     {
         std::cerr << "FATAL: Cannot create SDL renderer" << std::endl;
         return 1;
     }
 
-    Mapview mv(sdlRenderer.get());
+    osmview::Mapview mv(renderer.get());
     Timer motion_timer;
     
     bool mouse_pan = false;
@@ -71,7 +72,7 @@ int main(int /*argc*/, char ** /*argv*/)
 
     while (true)
     {
-        SDL_Delay(10);
+        //SDL_Delay(1000/60);
 
         // 1. Process events
     
@@ -92,16 +93,15 @@ int main(int /*argc*/, char ** /*argv*/)
                     mv.zoom(1);
                     break;
                 case SDL_SCANCODE_F11:
-                    //SDL_WM_ToggleFullScreen(screen);
+                    SDL_SetWindowFullscreen(window.get(),
+                                            fullscreen ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP);
+                    fullscreen = !fullscreen;
                     break;
+                case SDL_SCANCODE_ESCAPE:
+                    return 0;
                 default:
                     break;
                 }
-                break;
-            case SDL_WINDOWEVENT_RESIZED:
-                break;
-            case SDL_MOUSEMOTION:
-                //mv.move_pix_hard(event.motion.x, event.motion.y);
                 break;
             case SDL_MOUSEBUTTONDOWN:
                 switch (event.button.button)
@@ -164,7 +164,7 @@ int main(int /*argc*/, char ** /*argv*/)
         
         mv.render();
         
-        SDL_RenderPresent(sdlRenderer.get());
+        SDL_RenderPresent(renderer.get());
     }
     
     return 0;

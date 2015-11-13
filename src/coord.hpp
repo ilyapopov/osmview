@@ -20,9 +20,28 @@
 #ifndef COORD_HPP_INCLUDED
 #define COORD_HPP_INCLUDED
 
+namespace osmview
+{
+
 double lon2mapx(double lon);
 double lat2mapy(double lat);
 double mapx2lon(double x);
 double mapy2lat(double y);
+
+inline double clamp(double x, double a, double b)
+{
+    if (x < a) return a;
+    if (x > b) return b;
+    return x;
+}
+
+inline double wrap(double x, double a, double b)
+{
+    if (x < a) return x + (b - a);
+    if (x > b) return x - (b - a);
+    return x;
+}
+
+}
 
 #endif

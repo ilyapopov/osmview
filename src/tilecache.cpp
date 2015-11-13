@@ -22,16 +22,21 @@
 #include <sstream>
 #include <utility>
 
-TileCache::TileCache(const std::string &tile_dir, const std::string &url_base, SDL_Renderer *renderer)
-:
+#include "tilecacheitem.hpp"
+
+osmview::TileCache::TileCache(const std::string &tile_dir, const std::string &url_base, SDL_Renderer *renderer)
+    :
     tile_dir_(tile_dir),
     url_base_(url_base),
-    fetcher_(2),
-    downloader_(4),
+    fetcher_(std::thread::hardware_concurrency()),
+    downloader_(16),
     renderer_(renderer)
 {}
 
-SDL_Texture * TileCache::get_texture(int level, int i, int j)
+osmview::TileCache::~TileCache()
+{}
+
+SDL_Texture * osmview::TileCache::get_texture(int level, int i, int j)
 {
     if (level < 0 )
         return nullptr;
@@ -51,41 +56,41 @@ SDL_Texture * TileCache::get_texture(int level, int i, int j)
         p = cache_.emplace(key, std::move(tci)).first;
     }
 
-    return p->second->get_texture();
+    return p->second->get_texture(renderer_);
 }
 
-TileCache::key_t TileCache::make_key(int level, int i, int j)
+osmview::TileCache::key_t osmview::TileCache::make_key(int level, int i, int j)
 {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << level << '/' << i << '/' << j;
 
     return ss.str();
 }
 
-std::string TileCache::make_file_name(int level, int i, int j) const
+std::string osmview::TileCache::make_file_name(int level, int i, int j) const
 {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << tile_dir_;
     ss << level << '/' << i << '/' << j << ".png";
 
     return ss.str();
 }
 
-std::string TileCache::make_url(int level, int i, int j) const
+std::string osmview::TileCache::make_url(int level, int i, int j) const
 {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << url_base_;
     ss << level << '/' << i << '/' << j << ".png";
 
     return ss.str();
 }
 
-void TileCache::request_fetch(TileCacheItem * item)
+void osmview::TileCache::request_fetch(TileCacheItem * item)
 {
-    fetcher_.emplace(item);
+    fetcher_.emplace([item](){item->fetch();});
 }
 
-void TileCache::request_download(TileCacheItem * item)
+void osmview::TileCache::request_download(TileCacheItem * item)
 {
-    downloader_.emplace(item);
+    downloader_.emplace([item](){item->download();});
 }

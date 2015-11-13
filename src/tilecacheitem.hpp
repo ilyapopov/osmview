@@ -26,6 +26,9 @@
 
 #include <SDL2/SDL.h>
 
+namespace osmview
+{
+
 class TileCache;
 
 struct SurfaceDeleter
@@ -46,18 +49,16 @@ class TileCacheItem
     std::unique_ptr<SDL_Surface, SurfaceDeleter> surface_;
     std::unique_ptr<SDL_Texture, TextureDeleter> texture_;
     std::mutex mutex_;
-    bool busy_;
-    bool queued_;
     TileCache * const cache_;
 
 public:
 
     TileCacheItem(TileCache * cache, const std::string & id, const std::string & file_name, const std::string & url);
 
-    bool fetch();
-    bool download();
+    void fetch();
+    void download();
 
-    SDL_Texture * get_texture();
+    SDL_Texture * get_texture(SDL_Renderer * renderer);
 
     std::string id() const
     {
@@ -65,5 +66,6 @@ public:
     }
 };
 
+}
 
 #endif

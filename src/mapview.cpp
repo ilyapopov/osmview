@@ -24,12 +24,12 @@
 
 #include "coord.hpp"
 
-const std::string Mapview::tile_dir_("/home/ipopov/.cache/maps/tile.openstreetmap.org/");
-const std::string Mapview::url_base_("http://tile.openstreetmap.org/");
-const double Mapview::v0_ = 2.0;
-const double Mapview::tau_ = 0.3;
+const std::string osmview::Mapview::tile_dir_("/home/ipopov/.cache/maps/tile.openstreetmap.org/");
+const std::string osmview::Mapview::url_base_("http://tile.openstreetmap.org/");
+const double osmview::Mapview::v0_ = 2.0;
+const double osmview::Mapview::tau_ = 0.3;
 
-Mapview::Mapview(SDL_Renderer * renderer)
+osmview::Mapview::Mapview(SDL_Renderer * renderer)
     : mapx_(0.5), mapy_(0.5),
     vx_(0.0), vy_(0.0), fx_(0.0), fy_(0.0),
     level_(1),
@@ -38,29 +38,29 @@ Mapview::Mapview(SDL_Renderer * renderer)
 {
 }
 
-void Mapview::center_on(double lat, double lon)
+void osmview::Mapview::center_on(double lat, double lon)
 {
-    mapx_ = lon2mapx(lon);
-    mapy_ = lat2mapy(lat);
+    mapx_ = osmview::lon2mapx(lon);
+    mapy_ = osmview::lat2mapy(lat);
     vx_ = vy_ = 0.0;
     fx_ = fy_ = 0.0;
 }
 
-void Mapview::move(double move_x, double move_y)
+void osmview::Mapview::move(double move_x, double move_y)
 {
     double scale = pow(2.0, level_);
     fx_ += v0_ * move_x / scale;
     fy_ += v0_ * move_y / scale;
 }
 
-void Mapview::move_pix_hard(double dx, double dy)
+void osmview::Mapview::move_pix_hard(double dx, double dy)
 {
     double scale = pow(2.0, level_);
     mapx_ += dx / tile_size_ / scale;
     mapy_ += dy / tile_size_ / scale;
 }
 
-int Mapview::zoom(int step)
+int osmview::Mapview::zoom(int step)
 {
     level_ += step;
     if(level_ < 0)
@@ -71,7 +71,7 @@ int Mapview::zoom(int step)
     return level_;
 }
 
-bool Mapview::render()
+bool osmview::Mapview::render()
 {
     SDL_RenderClear(renderer_);
     
@@ -123,7 +123,7 @@ bool Mapview::render()
     return true;
 }
 
-void Mapview::motion_step(double dt)
+void osmview::Mapview::motion_step(double dt)
 {
     vx_ += (fx_ - vx_)*dt/tau_;
     vy_ += (fy_ - vy_)*dt/tau_;
@@ -131,15 +131,6 @@ void Mapview::motion_step(double dt)
     fx_ = 0.0;
     fy_ = 0.0;
 
-    mapy_ += vy_ * dt;
-    if(mapy_ < 0.0)
-        mapy_ = 0.0;
-    else if(mapy_ > 1.0)
-        mapy_ = 1.0;
-
-    mapx_ += vx_ * dt;
-    if(mapx_ < 0.0)
-        mapx_ += 1.0;
-    else if(mapx_ > 1.0)
-        mapx_ -= 1.0;
+    mapx_ = wrap(mapx_ + vx_ * dt, 0.0, 1.0);
+    mapy_ = clamp(mapy_ + vy_ * dt, 0.0, 1.0);
 }
