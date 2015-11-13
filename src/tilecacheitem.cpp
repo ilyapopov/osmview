@@ -20,7 +20,6 @@
 #include "tilecacheitem.hpp"
 
 #include <cstdio>
-#include <iostream>
 
 #include <boost/filesystem.hpp>
 #include <curl/curl.h>
@@ -28,30 +27,21 @@
 
 #include "tilecache.hpp"
 
-TileCacheItem::TileCacheItem(TileCache * cache, const std::string &id, const std::string &file_name, const std::string &url)
+osmview::TileCacheItem::TileCacheItem(TileCache * cache, const std::string &id, const std::string &file_name, const std::string &url)
 :
     id_(id),
     file_name_(file_name),
     url_(url),
-    busy_(false),
-    queued_(false),
     cache_(cache)
-{}
-
-bool TileCacheItem::fetch()
 {
-    std::unique_lock<std::mutex> lock(mutex_);
+    cache->request_fetch(this);
+}
 
-    if(busy_)
-        return true;
-
-    busy_ = true;
-
-    lock.unlock();
-
+void osmview::TileCacheItem::fetch()
+{
     SDL_Surface * s = IMG_Load(file_name_.c_str());
 
-    lock.lock();
+    std::unique_lock<std::mutex>(mutex_);
 
     if(s == nullptr)
     {
@@ -60,25 +50,11 @@ bool TileCacheItem::fetch()
     else
     {
         surface_.reset(s);
-        queued_ = false;
     }
-
-    busy_ = false;
-
-    return true;
 }
 
-bool TileCacheItem::download()
+void osmview::TileCacheItem::download()
 {
-    std::unique_lock<std::mutex> lock(mutex_);
-
-    if(busy_)
-        return true;
-
-    busy_ = true;
-
-    lock.unlock();
-
     boost::filesystem::path path(file_name_);
     
     boost::filesystem::create_directories(path.parent_path());
@@ -89,36 +65,28 @@ bool TileCacheItem::download()
         CURL * curl = curl_easy_init();
         curl_easy_setopt(curl, CURLOPT_URL, url_.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10l);
         curl_easy_perform(curl);
         curl_easy_cleanup(curl);
 
         fclose(file);
     }
-    
-    lock.lock();
 
-    busy_ = false;
-    queued_ = false;
-    
-    return true;
+    cache_->request_fetch(this);
 }
 
-SDL_Texture * TileCacheItem::get_texture()
+SDL_Texture * osmview::TileCacheItem::get_texture(SDL_Renderer * renderer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!surface_ && !queued_ && !busy_)
-    {
-        cache_->request_fetch(this);
-        queued_ = true;
-    }
+
+    if (texture_)
+        return texture_.get();
 
     // Texture oprations are not thread safe, thus done here
-    if (surface_ && !texture_)
+    if (surface_)
     {
-        texture_.reset(SDL_CreateTextureFromSurface(cache_->renderer(), surface_.get()));
-        if (!texture_)
-            std::cerr << "Texture creation failed " << id_ << std::endl;
+        texture_.reset(SDL_CreateTextureFromSurface(renderer, surface_.get()));
+        return texture_.get();
     }
 
     return texture_.get();

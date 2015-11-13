@@ -20,6 +20,7 @@
 #ifndef TILECACHE_HPP_INCLUDED
 #define TILECACHE_HPP_INCLUDED
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -27,39 +28,11 @@
 #include <SDL2/SDL.h>
 
 #include "worker.hpp"
-#include "tilecacheitem.hpp"
 
-class FetchJob
+namespace osmview
 {
-    TileCacheItem * item_;
 
-public:
-    FetchJob(TileCacheItem * item)
-    : item_(item)
-    {}
-
-    void operator()()
-    {
-        item_->fetch();
-    }
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-class DownloadJob
-{
-    TileCacheItem * item_;
-
-public:
-    DownloadJob(TileCacheItem * item)
-    : item_(item)
-    {}
-
-    void operator()()
-    {
-        item_->download();
-    }
-};
+class TileCacheItem;
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -72,8 +45,8 @@ class TileCache
     std::string url_base_;
     map_t cache_;
     
-    WorkerPool<FetchJob> fetcher_;
-    WorkerPool<DownloadJob> downloader_;
+    WorkerPool<std::function<void()> > fetcher_;
+    WorkerPool<std::function<void()> > downloader_;
 
     SDL_Renderer * renderer_;
     
@@ -83,16 +56,14 @@ class TileCache
 
 public:
     TileCache(const std::string & tile_dir, const std::string & url_base, SDL_Renderer * renderer);
+    ~TileCache();
     
     SDL_Texture * get_texture(int level, int i, int j);
     
     void request_fetch(TileCacheItem * item);
     void request_download(TileCacheItem * item);
-
-    SDL_Renderer * renderer() const
-    {
-        return renderer_;
-    }
 };
+
+}
 
 #endif

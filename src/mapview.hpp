@@ -26,6 +26,9 @@
 
 #include "tilecache.hpp"
 
+namespace osmview
+{
+
 class Mapview
 {
     static const int tile_size_ = 256;
@@ -61,5 +64,7 @@ public:
     
     bool render();
 };
+
+}
 
 #endif
