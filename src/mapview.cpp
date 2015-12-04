@@ -82,24 +82,8 @@ void osmview::Mapview::move_pix_hard(double dx, double dy)
 
 int osmview::Mapview::zoom(int step)
 {
-    target_level_ += step;
-    if(target_level_ < 0)
-        target_level_ = 0;
-    else if(target_level_ > max_level_)
-        target_level_ = max_level_;
+    target_level_ = clamp(target_level_ + step, 0, max_level_);
         
-    return target_level_;
-}
-
-int osmview::Mapview::zoom(int step, int x, int y)
-{
-
-    target_level_ += step;
-    if(target_level_ < 0)
-        target_level_ = 0;
-    else if(target_level_ > max_level_)
-        target_level_ = max_level_;
-
     return target_level_;
 }
 
@@ -163,6 +147,6 @@ void osmview::Mapview::update(double dt)
     mapy_ = clamp(mapy_ + vy_ * dt, 0.0, 1.0);
 
     level_ += (target_level_ - level_) * beta;
-    level_ = clamp(level_, 1.0, (double)max_level_);
+    level_ = clamp(level_, 0.0, (double)max_level_);
     scale_ = std::pow(2.0, level_);
 }
