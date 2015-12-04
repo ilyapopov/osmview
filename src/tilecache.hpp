@@ -28,6 +28,7 @@
 
 #include <SDL2pp/Renderer.hh>
 #include <SDL2pp/Texture.hh>
+#include <SDL2pp/Font.hh>
 
 namespace osmview
 {
@@ -50,15 +51,16 @@ class TileCache
 
     SDL2pp::Renderer &renderer_;
 
-    SDL2pp::Texture loading_texture_;
-
     size_t max_size_;
+
+    std::unordered_map<int, SDL2pp::Optional<SDL2pp::Texture>>
+        special_tiles_;
     
     static key_t make_key(int level, int i, int j);
     std::string make_file_name(int level, int i, int j) const;
     std::string make_url(int level, int i, int j) const;
-    SDL2pp::Texture generate_loading_texture();
-    SDL2pp::Texture generate_downloading_texture();
+    void generate_special_tiles();
+    SDL2pp::Texture generate_text_tile(std::string text, SDL2pp::Font & font);
     void gc();
 
 public:
