@@ -74,6 +74,11 @@ public:
         return id_;
     }
 
+    state_t state() const
+    {
+        return state_;
+    }
+
     std::size_t access_timestamp() const
     {
         return last_access_timestamp_;

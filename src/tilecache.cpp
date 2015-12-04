@@ -38,9 +38,10 @@ osmview::TileCache::TileCache(const std::string &tile_dir,
     fetcher_(std::thread::hardware_concurrency()),
     downloader_(16),
     renderer_(renderer),
-    loading_texture_(generate_loading_texture()),
     max_size_(max_size)
-{}
+{
+    generate_special_tiles();
+}
 
 osmview::TileCache::~TileCache()
 {}
@@ -77,26 +78,9 @@ SDL2pp::Texture & osmview::TileCache::get_texture(int level, int i, int j,
 
     if (texture)
         return *texture;
-    return loading_texture_;
-}
 
-SDL2pp::Texture osmview::TileCache::generate_loading_texture()
-{
-    SDL2pp::Surface tile(0, 256, 256, 32, 0, 0, 0, 0);
-    tile.FillRect(SDL2pp::NullOpt, 0x00000000);
 
-    try
-    {
-        SDL2pp::Font font("data/ClearSans-Medium.ttf", 24);
-        auto text = font.RenderText_Blended("Loading...", {128, 128, 128, 0});
-        text.Blit(SDL2pp::NullOpt, tile, {(tile.GetSize() - text.GetSize())/ 2, text.GetSize()});
-    }
-    catch (SDL2pp::Exception &e)
-    {
-        std::cerr << "Warning: Cannot render text: " << e.what() << std::endl;
-    }
-
-    return SDL2pp::Texture(renderer_, tile);
+    return *special_tiles_.at((int)p->second->state());
 }
 
 void osmview::TileCache::gc()
@@ -159,6 +143,33 @@ std::string osmview::TileCache::make_url(int level, int i, int j) const
     ss << level << '/' << i << '/' << j << ".png";
 
     return ss.str();
+}
+
+void osmview::TileCache::generate_special_tiles()
+{
+    SDL2pp::Font font("data/ClearSans-Medium.ttf", 24);
+    special_tiles_.emplace((int)TileCacheItem::state_t::loading,
+                           generate_text_tile("Loading...", font));
+    special_tiles_.emplace((int)TileCacheItem::state_t::downloading,
+                           generate_text_tile("Downoading...", font));
+    special_tiles_.emplace((int)TileCacheItem::state_t::error,
+                           generate_text_tile("Error", font));
+    special_tiles_.emplace((int)TileCacheItem::state_t::scheduled_for_loading,
+                           generate_text_tile("Scheduled", font));
+    special_tiles_.emplace((int)TileCacheItem::state_t::scheduled_for_downloading,
+                           generate_text_tile("Scheduled", font));
+}
+
+SDL2pp::Texture osmview::TileCache::generate_text_tile(std::string text, SDL2pp::Font &font)
+{
+    SDL2pp::Surface tile(0, 256, 256, 32, 0, 0, 0, 0);
+    tile.FillRect(SDL2pp::NullOpt, 0x00000000);
+
+    auto text_surface = font.RenderText_Blended(text, {128, 128, 128, 0});
+    text_surface.Blit(SDL2pp::NullOpt, tile,
+    {(tile.GetSize() - text_surface.GetSize())/ 2, text_surface.GetSize()});
+
+    return SDL2pp::Texture(renderer_, tile);
 }
 
 void osmview::TileCache::request_load(TileCacheItem * item)
