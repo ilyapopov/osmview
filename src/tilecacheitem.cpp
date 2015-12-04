@@ -23,71 +23,108 @@
 
 #include <boost/filesystem.hpp>
 #include <curl/curl.h>
-#include <SDL2/SDL_image.h>
+
+#include <SDL2pp/Exception.hh>
 
 #include "tilecache.hpp"
 
-osmview::TileCacheItem::TileCacheItem(TileCache * cache, const std::string &id, const std::string &file_name, const std::string &url)
-:
+osmview::TileCacheItem::TileCacheItem(TileCache * cache, const std::string &id,
+                                      const std::string &file_name,
+                                      const std::string &url) :
     id_(id),
     file_name_(file_name),
     url_(url),
-    cache_(cache)
+    cache_(cache),
+    state_(state_t::free)
 {
-    cache->request_fetch(this);
+    state_ = state_t::scheduled_for_loading;
+    cache->request_load(this);
 }
 
-void osmview::TileCacheItem::fetch()
+void osmview::TileCacheItem::load()
 {
-    SDL_Surface * s = IMG_Load(file_name_.c_str());
-
-    std::unique_lock<std::mutex>(mutex_);
-
-    if(s == nullptr)
+    assert(state_ == state_t::scheduled_for_loading);
+    state_ = state_t::loading;
+    try
     {
-        cache_->request_download(this);
+        SDL2pp::Surface s(file_name_);
+
+        {
+            std::unique_lock<std::mutex>(mutex_);
+            surface_ = std::move(s);
+        }
+
+        state_ = state_t::surface_ready;
     }
-    else
+    catch (SDL2pp::Exception &e)
     {
-        surface_.reset(s);
+        state_ = state_t::scheduled_for_downloading;
+        cache_->request_download(this);
     }
 }
 
 void osmview::TileCacheItem::download()
 {
-    boost::filesystem::path path(file_name_);
-    
-    boost::filesystem::create_directories(path.parent_path());
-
-    FILE * file = fopen(path.string().c_str(), "wb");
-    if(file)
+    assert(state_ == state_t::scheduled_for_downloading);
+    state_ = state_t::downloading;
+    try
     {
-        CURL * curl = curl_easy_init();
-        curl_easy_setopt(curl, CURLOPT_URL, url_.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10l);
-        curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
+        namespace fs = boost::filesystem;
 
-        fclose(file);
+        fs::create_directories(fs::path(file_name_).parent_path());
+
+        std::string tmp_file_name = file_name_ + ".tmp";
+
+        {
+            std::unique_ptr<FILE, int (*)(FILE*)> file(fopen(tmp_file_name.c_str(), "wb"), fclose);
+            if (!file)
+            {
+                throw std::system_error(errno, std::system_category());
+            }
+
+            std::unique_ptr<CURL, void (*)(CURL*)> curl(curl_easy_init(), curl_easy_cleanup);
+            if (!curl)
+            {
+                throw std::runtime_error("Cannot initialize CURL");
+            }
+
+            char errorrbuf[CURL_ERROR_SIZE];
+            curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, errorrbuf);
+            curl_easy_setopt(curl.get(), CURLOPT_URL, url_.c_str());
+            curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, file.get());
+            curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT, 10l);
+            auto res = curl_easy_perform(curl.get());
+            if (res != CURLE_OK)
+            {
+                throw std::runtime_error(errorrbuf);
+            }
+        }
+
+        fs::rename(tmp_file_name, file_name_);
+
+        state_ = state_t::scheduled_for_loading;
+        cache_->request_load(this);
     }
-
-    cache_->request_fetch(this);
+    catch (std::exception & e)
+    {
+        state_ = state_t::error;
+        std::cerr << "Error downloading from " << url_ << std::endl;
+        std::cerr << e.what() << std::endl;
+    }
 }
 
-SDL_Texture * osmview::TileCacheItem::get_texture(SDL_Renderer * renderer)
+SDL2pp::Optional<SDL2pp::Texture> &osmview::TileCacheItem::get_texture(
+        SDL2pp::Renderer &renderer, size_t timestamp)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    if (texture_)
-        return texture_.get();
+    last_access_timestamp_ = timestamp;
 
-    // Texture oprations are not thread safe, thus done here
-    if (surface_)
+    // Texture operations are not thread safe, thus done here
+    if (surface_ && !texture_)
     {
-        texture_.reset(SDL_CreateTextureFromSurface(renderer, surface_.get()));
-        return texture_.get();
+        texture_ = SDL2pp::Texture(renderer, *surface_);
     }
 
-    return texture_.get();
+    return texture_;
 }

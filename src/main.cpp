@@ -17,155 +17,149 @@
     along with osmview.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <cstdlib>
+#include <exception>
 #include <iostream>
 
 #include <curl/curl.h>
-#include "SDL2/SDL.h"
+
+#include <SDL2pp/SDL.hh>
+#include <SDL2pp/SDLTTF.hh>
+#include <SDL2pp/Window.hh>
+#include <SDL2pp/Renderer.hh>
+
+#include <SDL2/SDL.h> // for constant defines
 
 #include "mapview.hpp"
 #include "timer.hpp"
 
 int main(int /*argc*/, char ** /*argv*/)
 {
-    SDL_Init(SDL_INIT_VIDEO);
-    atexit(SDL_Quit);
-    
-    curl_global_init(CURL_GLOBAL_ALL);
-    atexit(curl_global_cleanup);
-    
-    std::unique_ptr<SDL_Window, void(*)(SDL_Window*)> window(
-        SDL_CreateWindow(
-            "OpenStreetMap viewer",
-            SDL_WINDOWPOS_UNDEFINED,
-            SDL_WINDOWPOS_UNDEFINED,
-            800,
-            600,
-            SDL_WINDOW_RESIZABLE
-        ), 
-        SDL_DestroyWindow);
-    if (!window)
+    try
     {
-        std::cerr << "FATAL: Cannot create SDL window" << std::endl;
-        return 1;
-    }
-    bool fullscreen = false;
+        SDL2pp::SDL sdl(SDL_INIT_VIDEO);
+        SDL2pp::SDLTTF sdlttf;
 
-    std::unique_ptr<SDL_Renderer, void(*)(SDL_Renderer*)> renderer(
-        SDL_CreateRenderer(
-            window.get(),
-            -1, 
-            SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
-        ),
-        SDL_DestroyRenderer);
-    if (!renderer)
-    {
-        std::cerr << "FATAL: Cannot create SDL renderer" << std::endl;
-        return 1;
-    }
+        curl_global_init(CURL_GLOBAL_ALL);
+        atexit(curl_global_cleanup);
 
-    osmview::Mapview mv(renderer.get());
-    Timer motion_timer;
-    
-    bool mouse_pan = false;
-    int mousex = 0, mousey = 0;
+        SDL2pp::Window window("OpenStreetMap viewer",
+                              SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                              800, 600,
+                              SDL_WINDOW_RESIZABLE
+                              );
 
-    while (true)
-    {
-        //SDL_Delay(1000/60);
+        bool fullscreen = false;
 
-        // 1. Process events
-    
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
+        SDL2pp::Renderer renderer(
+                    window,
+                    -1,
+                    SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
+                    );
+
+        osmview::Mapview mv(renderer);
+        Timer motion_timer;
+
+        bool mouse_pan = false;
+        int mousex = 0, mousey = 0;
+
+        while (true)
         {
-            switch (event.type)
+            // 1. Process events
+            SDL_Event event;
+            while (SDL_PollEvent(&event))
             {
-            case SDL_QUIT:
-                return 0;
-            case SDL_KEYDOWN:
-                switch (event.key.keysym.scancode)
+                switch (event.type)
                 {
-                case SDL_SCANCODE_MINUS:
-                    mv.zoom(-1);
-                    break;
-                case SDL_SCANCODE_EQUALS:
-                    mv.zoom(1);
-                    break;
-                case SDL_SCANCODE_F11:
-                    SDL_SetWindowFullscreen(window.get(),
-                                            fullscreen ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP);
-                    fullscreen = !fullscreen;
-                    break;
-                case SDL_SCANCODE_ESCAPE:
+                case SDL_QUIT:
                     return 0;
+                case SDL_KEYDOWN:
+                    switch (event.key.keysym.scancode)
+                    {
+                    case SDL_SCANCODE_MINUS:
+                        mv.zoom(-1);
+                        break;
+                    case SDL_SCANCODE_EQUALS:
+                        mv.zoom(1);
+                        break;
+                    case SDL_SCANCODE_F11:
+                        window.SetFullscreen(fullscreen ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP);
+                        fullscreen = !fullscreen;
+                        break;
+                    case SDL_SCANCODE_ESCAPE:
+                        return 0;
+                    default:
+                        break;
+                    }
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                    switch (event.button.button)
+                    {
+                    case SDL_BUTTON_LEFT:
+                        mouse_pan = true;
+                        SDL_GetRelativeMouseState(&mousex, &mousey);
+                    default:
+                        break;
+                    }
+                    break;
+                case SDL_MOUSEBUTTONUP:
+                    switch (event.button.button)
+                    {
+                    case SDL_BUTTON_LEFT:
+                        mouse_pan = false;
+                    default:
+                        break;
+                    }
+                    break;
+                case SDL_MOUSEWHEEL:
+                    mv.zoom(event.wheel.y);
+                    break;
                 default:
                     break;
                 }
-                break;
-            case SDL_MOUSEBUTTONDOWN:
-                switch (event.button.button)
-                {
-                case SDL_BUTTON_LEFT:
-                    mouse_pan = true;
-                    SDL_GetRelativeMouseState(&mousex, &mousey);
-                default:
-                    break;
-                }
-                break;
-            case SDL_MOUSEBUTTONUP:
-                switch (event.button.button)
-                {
-                case SDL_BUTTON_LEFT:
-                    mouse_pan = false;
-                default:
-                    break;
-                }
-                break;
-            case SDL_MOUSEWHEEL:
-                mv.zoom(event.wheel.y);
-                break;
-            default:
-                break;
             }
+
+            // 2. Process key states
+
+            const Uint8 *keystate = SDL_GetKeyboardState(nullptr);
+            if (keystate[SDL_SCANCODE_LEFT])
+            {
+                mv.move(-1, 0);
+            }
+            if (keystate[SDL_SCANCODE_RIGHT])
+            {
+                mv.move(1, 0);
+            }
+            if (keystate[SDL_SCANCODE_UP])
+            {
+                mv.move(0, -1);
+            }
+            if (keystate[SDL_SCANCODE_DOWN])
+            {
+                mv.move(0, 1);
+            }
+
+            if (mouse_pan)
+            {
+                SDL_GetRelativeMouseState(&mousex, &mousey);
+                mv.move_pix_hard(-mousex, -mousey);
+            }
+
+            // 3. Update system state
+
+            mv.update(motion_timer.delta());
+
+            // 4. Render the screen
+
+            renderer.Clear();
+
+            mv.render();
+
+            renderer.Present();
         }
-        
-        // 2. Process key states
-        
-        const Uint8 *keystate = SDL_GetKeyboardState(nullptr);
-        if (keystate[SDL_SCANCODE_LEFT])
-        {
-            mv.move(-1, 0);
-        }
-        if (keystate[SDL_SCANCODE_RIGHT])
-        {
-            mv.move(1, 0);
-        }
-        if (keystate[SDL_SCANCODE_UP])
-        {
-            mv.move(0, -1);
-        }
-        if (keystate[SDL_SCANCODE_DOWN])
-        {
-            mv.move(0, 1);
-        }
-        
-        if (mouse_pan)
-        {
-            SDL_GetRelativeMouseState(&mousex, &mousey);
-            mv.move_pix_hard(-mousex, -mousey);
-        }
-        
-        // 3. Update system state
-        
-        mv.motion_step(motion_timer.delta());
-        
-        // 4. Render the screen
-        
-        mv.render();
-        
-        SDL_RenderPresent(renderer.get());
     }
-    
-    return 0;
+    catch (std::exception & e)
+    {
+        std::cerr << "Fatal Error: " << e.what() << std::endl;
+        return 1;
+    }
 }

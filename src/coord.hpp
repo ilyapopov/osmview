@@ -28,18 +28,27 @@ double lat2mapy(double lat);
 double mapx2lon(double x);
 double mapy2lat(double y);
 
-inline double clamp(double x, double a, double b)
+template <typename T>
+T clamp(const T &x, const T &a, const T &b)
 {
     if (x < a) return a;
-    if (x > b) return b;
+    if (b < x) return b;
     return x;
 }
 
-inline double wrap(double x, double a, double b)
+template <typename T>
+T wrap(const T &x, const T &a, const T &b)
 {
-    if (x < a) return x + (b - a);
-    if (x > b) return x - (b - a);
-    return x;
+    T y = x;
+    while (y < a)
+    {
+        y += b - a;
+    }
+    while (b < y || b == y)
+    {
+        y -= b - a;
+    }
+    return y;
 }
 
 }
