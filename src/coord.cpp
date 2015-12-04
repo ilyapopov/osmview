@@ -27,8 +27,9 @@ double osmview::lon2mapx(double lon)
 }
  
 double osmview::lat2mapy(double lat)
-{ 
-    return (1.0 - std::log( std::tan(lat * M_PI/180.0) + 1.0 / std::cos(lat * M_PI/180.0)) / M_PI) / 2.0;
+{
+    double lat_rad = lat * M_PI/180.0;
+    return (1.0 - std::asinh(std::tan(lat_rad)) / M_PI) / 2.0;
 }
  
 double osmview::mapx2lon(double x)
@@ -39,5 +40,5 @@ double osmview::mapx2lon(double x)
 double osmview::mapy2lat(double y)
 {
 	double n = M_PI - 2.0 * M_PI * y;
-    return 180.0 / M_PI * std::atan(0.5 * (std::exp(n) - std::exp(-n)));
+    return 180.0 / M_PI * std::atan(std::sinh(n));
 }

@@ -20,49 +20,63 @@
 #ifndef TILECACHEITEM_HPP_INCLUDED
 #define TILECACHEITEM_HPP_INCLUDED
 
-#include <memory>
+#include <atomic>
 #include <mutex>
 #include <string>
 
-#include <SDL2/SDL.h>
+#include <SDL2pp/Optional.hh>
+#include <SDL2pp/Surface.hh>
+#include <SDL2pp/Texture.hh>
 
 namespace osmview
 {
 
 class TileCache;
 
-struct SurfaceDeleter
-{
-    void operator()(SDL_Surface * s) {SDL_FreeSurface(s);}
-};
-
-struct TextureDeleter
-{
-    void operator()(SDL_Texture * t) {SDL_DestroyTexture(t);}
-};
-
 class TileCacheItem
 {
+public:
+    enum class state_t
+    {
+        free = 0,
+        scheduled_for_loading = 1,
+        loading = 2,
+        scheduled_for_downloading = 3,
+        downloading = 4,
+        surface_ready = 5,
+        error = 6
+    };
+
+private:
     const std::string id_;
     const std::string file_name_;
     const std::string url_;
-    std::unique_ptr<SDL_Surface, SurfaceDeleter> surface_;
-    std::unique_ptr<SDL_Texture, TextureDeleter> texture_;
+    SDL2pp::Optional<SDL2pp::Surface> surface_;
+    SDL2pp::Optional<SDL2pp::Texture> texture_;
     std::mutex mutex_;
-    TileCache * const cache_;
+    TileCache * cache_;
+    std::atomic<state_t> state_;
+    size_t last_access_timestamp_;
 
 public:
 
-    TileCacheItem(TileCache * cache, const std::string & id, const std::string & file_name, const std::string & url);
+    TileCacheItem(TileCache * cache, const std::string & id,
+                  const std::string & file_name, const std::string & url);
 
-    void fetch();
+    void load();
     void download();
 
-    SDL_Texture * get_texture(SDL_Renderer * renderer);
+    SDL2pp::Optional<SDL2pp::Texture> &get_texture(SDL2pp::Renderer &renderer,
+                                                   size_t timestamp);
 
     std::string id() const
     {
         return id_;
+    }
+
+    std::size_t access_timestamp() const
+    {
+        return last_access_timestamp_;
     }
 };
 

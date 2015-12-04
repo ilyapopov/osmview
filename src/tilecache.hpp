@@ -21,13 +21,13 @@
 #define TILECACHE_HPP_INCLUDED
 
 #include <functional>
-#include <memory>
 #include <string>
 #include <unordered_map>
 
-#include <SDL2/SDL.h>
-
 #include "worker.hpp"
+
+#include <SDL2pp/Renderer.hh>
+#include <SDL2pp/Texture.hh>
 
 namespace osmview
 {
@@ -48,19 +48,32 @@ class TileCache
     WorkerPool<std::function<void()> > fetcher_;
     WorkerPool<std::function<void()> > downloader_;
 
-    SDL_Renderer * renderer_;
+    SDL2pp::Renderer &renderer_;
+
+    SDL2pp::Texture loading_texture_;
+
+    size_t max_size_;
     
     static key_t make_key(int level, int i, int j);
     std::string make_file_name(int level, int i, int j) const;
     std::string make_url(int level, int i, int j) const;
+    SDL2pp::Texture generate_loading_texture();
+    SDL2pp::Texture generate_downloading_texture();
+    void gc();
 
 public:
-    TileCache(const std::string & tile_dir, const std::string & url_base, SDL_Renderer * renderer);
+    TileCache(const std::string & tile_dir, const std::string & url_base,
+              SDL2pp::Renderer &renderer, size_t max_size_ = 256);
     ~TileCache();
+
+    size_t size() const
+    {
+        return cache_.size();
+    }
+
+    SDL2pp::Texture & get_texture(int level, int i, int j, size_t timestamp);
     
-    SDL_Texture * get_texture(int level, int i, int j);
-    
-    void request_fetch(TileCacheItem * item);
+    void request_load(TileCacheItem * item);
     void request_download(TileCacheItem * item);
 };
 

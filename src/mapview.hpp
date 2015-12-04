@@ -20,14 +20,15 @@
 #ifndef MAPVIEW_HPP_INCLUDED
 #define MAPVIEW_HPP_INCLUDED
 
+#include <memory>
 #include <string>
 
-#include <SDL2/SDL.h>
-
-#include "tilecache.hpp"
+#include <SDL2pp/Renderer.hh>
 
 namespace osmview
 {
+
+class TileCache;
 
 class Mapview
 {
@@ -45,24 +46,34 @@ class Mapview
     double vx_, vy_;
     double fx_, fy_;
     
-    int level_;
+    int target_level_;
+    double level_;
+    double scale_;
     
-    TileCache cache_;
+    std::unique_ptr<TileCache> cache_;
 
-    SDL_Renderer * renderer_;
+    SDL2pp::Renderer &renderer_;
+    SDL2pp::Point output_size_;
+
+    size_t frame_num_;
+
+    SDL2pp::Point to_screen(double x, double y);
+    std::pair<double, double> from_screen(const SDL2pp::Point &point);
 
 public:
 
-    Mapview(SDL_Renderer * renderer);
+    Mapview(SDL2pp::Renderer &renderer);
+    ~Mapview();
     
-    void center_on(double lat, double lon);
+    void center_on_latlon(double lat, double lon);
     void move(double move_x, double move_y);
     void move_pix_hard(double dx, double dy);
-    void motion_step(double dt);
+    void update(double dt);
     
     int zoom(int step);
+    int zoom(int step, int x, int y);
     
-    bool render();
+    void render();
 };
 
 }
