@@ -124,7 +124,11 @@ SDL2pp::Optional<SDL2pp::Texture> &osmview::TileCacheItem::get_texture(
     if (surface_ && !texture_)
     {
         texture_ = SDL2pp::Texture(renderer, *surface_);
+
+        // delete the surface
+        surface_ = SDL2pp::NullOpt;
     }
+
 
     return texture_;
 }
