@@ -21,12 +21,12 @@
 
 #include <algorithm>
 #include <sstream>
+#include <stdexcept>
 #include <utility>
 
-#include "tilecacheitem.hpp"
+#include <SDL2pp/Surface.hh>
 
-#include <SDL2pp/Font.hh>
-#include <SDL2pp/Exception.hh>
+#include "tilecacheitem.hpp"
 
 osmview::TileCache::TileCache(const std::string &tile_dir,
                               const std::string &url_base,

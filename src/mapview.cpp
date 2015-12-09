@@ -20,8 +20,8 @@
 #include "mapview.hpp"
 
 #include <cmath>
-#include <string>
 
+#include <SDL2pp/Rect.hh>
 #include <SDL2pp/Renderer.hh>
 
 #include "coord.hpp"
@@ -68,16 +68,14 @@ void osmview::Mapview::center_on_latlon(double lat, double lon)
 
 void osmview::Mapview::move(double move_x, double move_y)
 {
-    double scale = std::pow(2.0, target_level_);
-    fx_ += v0_ * move_x / scale;
-    fy_ += v0_ * move_y / scale;
+    fx_ += v0_ * move_x / scale_;
+    fy_ += v0_ * move_y / scale_;
 }
 
 void osmview::Mapview::move_pix_hard(double dx, double dy)
 {
-    double scale = std::pow(2.0, target_level_);
-    mapx_ += dx / tile_size_ / scale;
-    mapy_ += dy / tile_size_ / scale;
+    mapx_ += dx / tile_size_ / scale_;
+    mapy_ += dy / tile_size_ / scale_;
 }
 
 int osmview::Mapview::zoom(int step)
