@@ -24,6 +24,7 @@
 #include <string>
 
 #include <SDL2pp/Renderer.hh>
+#include <SDL2pp/Point.hh>
 
 namespace osmview
 {

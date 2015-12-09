@@ -21,14 +21,16 @@
 #define TILECACHE_HPP_INCLUDED
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <unordered_map>
 
-#include "worker.hpp"
-
+#include <SDL2pp/Font.hh>
+#include <SDL2pp/Optional.hh>
 #include <SDL2pp/Renderer.hh>
 #include <SDL2pp/Texture.hh>
-#include <SDL2pp/Font.hh>
+
+#include "worker.hpp"
 
 namespace osmview
 {

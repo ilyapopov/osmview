@@ -20,6 +20,7 @@
 #include "tilecacheitem.hpp"
 
 #include <cstdio>
+#include <stdexcept>
 
 #include <boost/filesystem.hpp>
 #include <curl/curl.h>

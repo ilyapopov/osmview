@@ -25,6 +25,7 @@
 #include <string>
 
 #include <SDL2pp/Optional.hh>
+#include <SDL2pp/Renderer.hh>
 #include <SDL2pp/Surface.hh>
 #include <SDL2pp/Texture.hh>
 
