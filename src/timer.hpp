@@ -20,44 +20,42 @@
 #ifndef TIMER_HPP_INCLUDED
 #define TIMER_HPP_INCLUDED
 
-#include <time.h>
+#include <chrono>
 
 namespace osmview
 {
 
 class Timer
 {
+    using clock_type = std::chrono::steady_clock;
+    using time_point_type = std::chrono::time_point<clock_type>;
 
-    double started_;
-    double last_;
-    
+    time_point_type started_;
+    time_point_type last_;
+
+    static time_point_type now()
+    {
+        return clock_type::now();
+    }
+
 public:
 
     Timer()
-    :
-        started_(now()),
-        last_(started_)
-    {
-    }
+        : started_(now()), last_(started_)
+    {}
     
-    static double now()
-    {
-        timespec ts;
-        
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-        
-        return ts.tv_sec + 1e-09 * ts.tv_nsec;
-    }
-
     double time() const
     {
-        return now() - started_;
+        return std::chrono::duration_cast<std::chrono::duration<double> >(
+                    now() - started_
+                    ).count();
     }
     double delta()
     {
-        double lastlast = last_;
+        auto tmp = last_;
         last_ = now();
-        return last_ - lastlast;
+        return std::chrono::duration_cast<std::chrono::duration<double> >(
+                last_ - tmp).count();
     }
 };
 
