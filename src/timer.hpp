@@ -22,6 +22,9 @@
 
 #include <time.h>
 
+namespace osmview
+{
+
 class Timer
 {
 
@@ -57,5 +60,7 @@ public:
         return last_ - lastlast;
     }
 };
+
+} // namespace
 
 #endif
