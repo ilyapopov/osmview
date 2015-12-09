@@ -57,7 +57,7 @@ int main(int /*argc*/, char ** /*argv*/)
                     );
 
         osmview::Mapview mv(renderer);
-        Timer motion_timer;
+        osmview::Timer motion_timer;
 
         bool mouse_pan = false;
         int mousex = 0, mousey = 0;
