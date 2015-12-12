@@ -160,7 +160,7 @@ void osmview::TileCache::generate_special_tiles()
                            generate_text_tile("Scheduled", font));
 }
 
-SDL2pp::Texture osmview::TileCache::generate_text_tile(std::string text, SDL2pp::Font &font)
+SDL2pp::Texture osmview::TileCache::generate_text_tile(const std::string &text, SDL2pp::Font &font)
 {
     SDL2pp::Surface tile(0, 256, 256, 32, 0, 0, 0, 0);
     tile.FillRect(SDL2pp::NullOpt, 0x00000000);

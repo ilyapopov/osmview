@@ -65,7 +65,7 @@ class TileCache
     std::string make_file_name(int level, int i, int j) const;
     std::string make_url(int level, int i, int j) const;
     void generate_special_tiles();
-    SDL2pp::Texture generate_text_tile(std::string text, SDL2pp::Font & font);
+    SDL2pp::Texture generate_text_tile(const std::string &text, SDL2pp::Font & font);
     void gc();
 
 public:
