@@ -35,8 +35,8 @@ osmview::TileCache::TileCache(const std::string &tile_dir,
     :
     tile_dir_(tile_dir),
     url_base_(url_base),
-    fetcher_(std::thread::hardware_concurrency()),
-    downloader_(16),
+    fetcher_pool_(std::thread::hardware_concurrency()),
+    downloader_pool_(16),
     renderer_(renderer),
     max_size_(max_size)
 {
@@ -174,10 +174,10 @@ SDL2pp::Texture osmview::TileCache::generate_text_tile(std::string text, SDL2pp:
 
 void osmview::TileCache::request_load(TileCacheItem * item)
 {
-    fetcher_.emplace([item](){item->load();});
+    fetcher_pool_.emplace([item](){item->load();});
 }
 
 void osmview::TileCache::request_download(TileCacheItem * item)
 {
-    downloader_.emplace([item](){item->download();});
+    downloader_pool_.emplace([item](){item->download();});
 }

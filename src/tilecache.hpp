@@ -30,6 +30,7 @@
 #include <SDL2pp/Renderer.hh>
 #include <SDL2pp/Texture.hh>
 
+#include "downloader.hpp"
 #include "worker.hpp"
 
 namespace osmview
@@ -48,8 +49,8 @@ class TileCache
     std::string url_base_;
     map_t cache_;
     
-    WorkerPool<std::function<void()> > fetcher_;
-    WorkerPool<std::function<void()> > downloader_;
+    WorkerPool<std::function<void()> > fetcher_pool_;
+    WorkerPool<std::function<void()> > downloader_pool_;
 
     SDL2pp::Renderer &renderer_;
 
@@ -57,6 +58,8 @@ class TileCache
 
     std::unordered_map<int, SDL2pp::Optional<SDL2pp::Texture>>
         special_tiles_;
+
+    Downloader downloader;
     
     static key_t make_key(int level, int i, int j);
     std::string make_file_name(int level, int i, int j) const;
@@ -79,6 +82,11 @@ public:
     
     void request_load(TileCacheItem * item);
     void request_download(TileCacheItem * item);
+
+    void download(const std::string & url, const std::string & file_name)
+    {
+        downloader.download(url, file_name);
+    }
 };
 
 }
