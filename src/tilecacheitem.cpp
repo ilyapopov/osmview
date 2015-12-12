@@ -19,11 +19,7 @@
 
 #include "tilecacheitem.hpp"
 
-#include <cstdio>
 #include <stdexcept>
-
-#include <boost/filesystem.hpp>
-#include <curl/curl.h>
 
 #include <SDL2pp/Exception.hh>
 
@@ -70,38 +66,7 @@ void osmview::TileCacheItem::download()
     state_ = state_t::downloading;
     try
     {
-        namespace fs = boost::filesystem;
-
-        fs::create_directories(fs::path(file_name_).parent_path());
-
-        std::string tmp_file_name = file_name_ + ".tmp";
-
-        {
-            std::unique_ptr<FILE, int (*)(FILE*)> file(fopen(tmp_file_name.c_str(), "wb"), fclose);
-            if (!file)
-            {
-                throw std::system_error(errno, std::system_category());
-            }
-
-            std::unique_ptr<CURL, void (*)(CURL*)> curl(curl_easy_init(), curl_easy_cleanup);
-            if (!curl)
-            {
-                throw std::runtime_error("Cannot initialize CURL");
-            }
-
-            char errorrbuf[CURL_ERROR_SIZE];
-            curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, errorrbuf);
-            curl_easy_setopt(curl.get(), CURLOPT_URL, url_.c_str());
-            curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, file.get());
-            curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT, 10l);
-            auto res = curl_easy_perform(curl.get());
-            if (res != CURLE_OK)
-            {
-                throw std::runtime_error(errorrbuf);
-            }
-        }
-
-        fs::rename(tmp_file_name, file_name_);
+        cache_->download(url_, file_name_);
 
         state_ = state_t::scheduled_for_loading;
         cache_->request_load(this);

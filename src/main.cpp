@@ -20,8 +20,6 @@
 #include <exception>
 #include <iostream>
 
-#include <curl/curl.h>
-
 #include <SDL2pp/SDL.hh>
 #include <SDL2pp/SDLTTF.hh>
 #include <SDL2pp/Window.hh>
@@ -38,9 +36,6 @@ int main(int /*argc*/, char ** /*argv*/)
     {
         SDL2pp::SDL sdl(SDL_INIT_VIDEO);
         SDL2pp::SDLTTF sdlttf;
-
-        curl_global_init(CURL_GLOBAL_ALL);
-        atexit(curl_global_cleanup);
 
         SDL2pp::Window window("OpenStreetMap viewer",
                               SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -161,5 +156,10 @@ int main(int /*argc*/, char ** /*argv*/)
     {
         std::cerr << "Fatal Error: " << e.what() << std::endl;
         return 1;
+    }
+    catch (...)
+    {
+        std::cerr << "Unknown error" << std::endl;
+        return 2;
     }
 }
