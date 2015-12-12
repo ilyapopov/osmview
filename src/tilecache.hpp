@@ -31,7 +31,7 @@
 #include <SDL2pp/Texture.hh>
 
 #include "downloader.hpp"
-#include "worker.hpp"
+#include "worker_pool.hpp"
 
 namespace osmview
 {
