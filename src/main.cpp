@@ -35,6 +35,7 @@ int main(int /*argc*/, char ** /*argv*/)
     try
     {
         SDL2pp::SDL sdl(SDL_INIT_VIDEO);
+        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
         SDL2pp::SDLTTF sdlttf;
 
         SDL2pp::Window window("OpenStreetMap viewer",
