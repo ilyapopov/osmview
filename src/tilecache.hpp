@@ -48,7 +48,9 @@ class TileCache
     std::string tile_dir_;
     std::string url_base_;
     map_t cache_;
-    
+
+    Downloader downloader;
+
     WorkerPool<std::function<void()> > fetcher_pool_;
     WorkerPool<std::function<void()> > downloader_pool_;
 
@@ -59,8 +61,6 @@ class TileCache
     std::unordered_map<int, SDL2pp::Optional<SDL2pp::Texture>>
         special_tiles_;
 
-    Downloader downloader;
-    
     static key_t make_key(int level, int i, int j);
     std::string make_file_name(int level, int i, int j) const;
     std::string make_url(int level, int i, int j) const;
