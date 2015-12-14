@@ -145,6 +145,8 @@ void osmview::Mapview::update(double dt)
     mapy_ = clamp(mapy_ + vy_ * dt, 0.0, 1.0);
 
     level_ += (target_level_ - level_) * beta;
+    if (std::abs(level_ - target_level_) < 0.01)
+        level_ = target_level_;
     level_ = clamp(level_, 0.0, (double)max_level_);
     scale_ = std::pow(2.0, level_);
 }
