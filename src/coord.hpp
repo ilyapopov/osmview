@@ -51,6 +51,6 @@ T wrap(const T &x, const T &a, const T &b)
     return y;
 }
 
-}
+} // namespace
 
 #endif
