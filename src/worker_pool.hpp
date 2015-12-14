@@ -17,8 +17,8 @@
     along with osmview.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef WORKER_HPP_INCLUDED
-#define WORKER_HPP_INCLUDED
+#ifndef WORKER_POOL_HPP_INCLUDED
+#define WORKER_POOL_HPP_INCLUDED
 
 #include <atomic>
 #include <condition_variable>
@@ -50,7 +50,7 @@ private:
     std::vector<std::thread> threads_;
     std::atomic<bool> stop_;
 
-    static void worker_func(WorkerPool<Job> * pool);
+    void worker_func();
 };
 
 template <typename Job>
@@ -60,7 +60,7 @@ WorkerPool<Job>::WorkerPool(size_t nthreads)
     threads_.reserve(nthreads);
     for (size_t i = 0; i < nthreads; ++i)
     {
-        threads_.emplace_back(worker_func, this);
+        threads_.emplace_back(&WorkerPool::worker_func, this);
     }
 }
 
@@ -76,20 +76,20 @@ WorkerPool<Job>::~WorkerPool()
 }
 
 template <typename Job>
-void WorkerPool<Job>::worker_func(WorkerPool<Job> *pool)
+void WorkerPool<Job>::worker_func()
 {
     while (true)
     {
-        std::unique_lock<std::mutex> lock(pool->mutex_);
-        pool->cond_.wait(lock, [pool](){
-            return !pool->queue_.empty() || pool->stop_;
+        std::unique_lock<std::mutex> lock(mutex_);
+        cond_.wait(lock, [this](){
+            return !queue_.empty() || stop_;
         });
 
-        if (pool->stop_)
+        if (stop_)
             return;
 
-        Job job(std::move(pool->queue_.front()));
-        pool->queue_.pop();
+        Job job(std::move(queue_.front()));
+        queue_.pop();
 
         lock.unlock();
 
