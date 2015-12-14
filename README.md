@@ -22,7 +22,7 @@ Install them on a apt based system using
 
 Then clone the source repository and update
 
-    hg clone http://bitbucket.org/ipopov/osmview
+    hg clone https://bitbucket.org/ipopov/osmview
 
 Dependencies
 ------------
