@@ -34,7 +34,7 @@ Dependencies
   is bundled within the repository.
   Shall be checked out automatically when cloning.
 
-To install depemdencies on apt-besed system (Debian and Ubuntu):
+To install dependencies on apt-based system (Debian and Ubuntu):
 
     sudo apt install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libcurl4-openssl-dev libboost-filesystem-dev
 
@@ -52,6 +52,7 @@ with a standard library, recent CMake.
 
 Then run osmview:
 
+    cd ..
     ./build/src/osmview
 
 *Enjoy!*
