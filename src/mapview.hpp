@@ -35,8 +35,6 @@ class Mapview
 {
     static const int tile_size_ = 256;
     static const int max_level_ = 18;
-    static const std::string tile_dir_;
-    static const std::string url_base_;
 
     static const double v0_;
     static const double tau_;

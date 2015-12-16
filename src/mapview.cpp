@@ -20,6 +20,7 @@
 #include "mapview.hpp"
 
 #include <cmath>
+#include <cstdlib>
 
 #include <SDL2pp/Rect.hh>
 #include <SDL2pp/Renderer.hh>
@@ -27,10 +28,25 @@
 #include "coord.hpp"
 #include "tilecache.hpp"
 
-const std::string osmview::Mapview::tile_dir_("/home/ipopov/.cache/maps/tile.openstreetmap.org/");
-const std::string osmview::Mapview::url_base_("http://tile.openstreetmap.org/");
 const double osmview::Mapview::v0_ = 2.0;
 const double osmview::Mapview::tau_ = 0.3;
+
+namespace
+{
+
+std::string get_user_cache_dir()
+{
+    const char * d = nullptr;
+    // Using "XDG Base Directory Specification"
+    if ((d = std::getenv("XDG_CACHE_HOME")))
+        return d;
+    // Use default directory
+    if ((d = std::getenv("HOME")))
+        return std::string(d) + "/.cache";
+    throw std::runtime_error("Cannot figure out cache directory location");
+}
+
+} // namespace
 
 SDL2pp::Point osmview::Mapview::to_screen(double x, double y)
 {
@@ -49,10 +65,14 @@ osmview::Mapview::Mapview(SDL2pp::Renderer &renderer)
     : mapx_(0.5), mapy_(0.5),
     vx_(0.0), vy_(0.0), fx_(0.0), fy_(0.0),
     target_level_(1), level_(1.0), scale_(1.0),
-    cache_(new TileCache(tile_dir_, url_base_, renderer)),
     renderer_(renderer), output_size_(renderer_.GetOutputSize()),
     frame_num_(0)
 {
+    std::string server_name("tile.openstreetmap.org");
+
+    cache_.reset(new TileCache(get_user_cache_dir() + "/maps/" + server_name,
+                           "http://" + server_name,
+                           renderer));
 }
 
 osmview::Mapview::~Mapview()
