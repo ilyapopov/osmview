@@ -60,7 +60,7 @@ Then run osmview:
 Author
 ======
 
-Ilya Popov <ilya.b.popov@gmail.com>
+Ilya Popov <ilia.b.popov@gmail.com>
 
 Links
 =====
