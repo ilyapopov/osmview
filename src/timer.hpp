@@ -27,11 +27,11 @@ namespace osmview
 
 class Timer
 {
+protected:
     using clock_type = std::chrono::steady_clock;
     using time_point_type = std::chrono::time_point<clock_type>;
 
     time_point_type started_;
-    time_point_type last_;
 
     static time_point_type now()
     {
@@ -40,8 +40,10 @@ class Timer
 
 public:
 
-    Timer()
-        : started_(now()), last_(started_)
+    Timer(): started_(now())
+    {}
+
+    virtual ~Timer()
     {}
     
     double time() const
@@ -50,12 +52,39 @@ public:
                     now() - started_
                     ).count();
     }
+};
+
+class DeltaTimer : public Timer
+{
+    time_point_type last_;
+
+public:
+    DeltaTimer() : last_(started_)
+    {}
+
     double delta()
     {
         auto tmp = last_;
         last_ = now();
         return std::chrono::duration_cast<std::chrono::duration<double> >(
                 last_ - tmp).count();
+    }
+};
+
+class ScopedTimer : public Timer
+{
+    std::string label_;
+
+public:
+    ScopedTimer(std::string label)
+        : label_(std::move(label))
+    {
+        std::cout << label_ << " started" << std::endl;
+    }
+
+    ~ScopedTimer() override
+    {
+        std::cout << label_ << " finished in " << time() << " s" << std::endl;
     }
 };
 
