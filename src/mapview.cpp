@@ -30,6 +30,8 @@
 
 const double osmview::Mapview::v0_ = 2.0;
 const double osmview::Mapview::tau_ = 0.3;
+const int osmview::Mapview::tile_size_;
+const int osmview::Mapview::max_level_;
 
 namespace
 {
