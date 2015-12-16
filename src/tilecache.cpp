@@ -130,7 +130,7 @@ osmview::TileCache::key_t osmview::TileCache::make_key(int level, int i, int j)
 std::string osmview::TileCache::make_file_name(int level, int i, int j) const
 {
     std::ostringstream ss;
-    ss << tile_dir_;
+    ss << tile_dir_ << '/';
     ss << level << '/' << i << '/' << j << ".png";
 
     return ss.str();
@@ -139,7 +139,7 @@ std::string osmview::TileCache::make_file_name(int level, int i, int j) const
 std::string osmview::TileCache::make_url(int level, int i, int j) const
 {
     std::ostringstream ss;
-    ss << url_base_;
+    ss << url_base_ << '/';
     ss << level << '/' << i << '/' << j << ".png";
 
     return ss.str();
