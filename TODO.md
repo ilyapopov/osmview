@@ -1,7 +1,6 @@
 TODO
 ====
 
-- Update license notice in source files.
 - Add OpenStreetMap credits
 - Add proper zoom on mouse cursor
 - Add garbage collection
@@ -17,5 +16,6 @@ TODO
 Done
 ====
 
+- Update license notice in source files. **[Done]**
 - Show tile state **[Done]**
 - Smooth zoom **[Done]**
