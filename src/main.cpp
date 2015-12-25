@@ -1,7 +1,8 @@
 /*
-    Copyright 2011, Ilya Popov <ilia_popov@rambler.ru>
+    Copyright 2011, 2014, 2015, Ilya Popov <ilia_popov@rambler.ru>
 
     This file is part of osmview.
+    https://bitbucket.org/ipopov/osmview
 
     osmview is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
