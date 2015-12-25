@@ -20,7 +20,6 @@
 #ifndef WORKER_POOL_HPP_INCLUDED
 #define WORKER_POOL_HPP_INCLUDED
 
-#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <queue>
@@ -28,11 +27,11 @@
 #include <utility>
 #include <vector>
 
-template <typename Job>
+template <typename Task>
 class WorkerPool
 {
 public:
-    explicit WorkerPool(size_t nthreads);
+    explicit WorkerPool(size_t nthreads = std::thread::hardware_concurrency());
     ~WorkerPool();
     
     template<typename... ArgTypes>
@@ -44,18 +43,26 @@ public:
     void stop();
 
 private:
-    std::mutex mutex_;
-    std::condition_variable cond_;
-    std::queue<Job> queue_;
+    enum class command
+    {
+        none,
+        stop,
+        finish,
+    };
+
     std::vector<std::thread> threads_;
-    std::atomic<bool> stop_;
+
+    std::mutex command_mutex_;
+    std::condition_variable command_cond_var_;
+    std::queue<Task> task_queue_;
+    command command_;
 
     void worker_func();
 };
 
-template <typename Job>
-WorkerPool<Job>::WorkerPool(size_t nthreads)
-    : stop_(false)
+template <typename Task>
+WorkerPool<Task>::WorkerPool(size_t nthreads)
+    : command_(command::none)
 {
     threads_.reserve(nthreads);
     for (size_t i = 0; i < nthreads; ++i)
@@ -64,8 +71,8 @@ WorkerPool<Job>::WorkerPool(size_t nthreads)
     }
 }
 
-template <typename Job>
-WorkerPool<Job>::~WorkerPool()
+template <typename Task>
+WorkerPool<Task>::~WorkerPool()
 {
     stop();
 
@@ -75,54 +82,60 @@ WorkerPool<Job>::~WorkerPool()
     }
 }
 
-template <typename Job>
-void WorkerPool<Job>::worker_func()
+template <typename Task>
+void WorkerPool<Task>::worker_func()
 {
     while (true)
     {
-        std::unique_lock<std::mutex> lock(mutex_);
-        cond_.wait(lock, [this](){
-            return !queue_.empty() || stop_;
+        std::unique_lock<std::mutex> lock(command_mutex_);
+        command_cond_var_.wait(lock, [&](){
+            return !task_queue_.empty() || command_ != command::none;
         });
 
-        if (stop_)
-            return;
+        if (command_ == command::stop)
+            break;
+        if (command_ == command::finish && task_queue_.empty())
+            break;
 
-        Job job(std::move(queue_.front()));
-        queue_.pop();
+        Task task(std::move(task_queue_.front()));
+        task_queue_.pop();
 
         lock.unlock();
 
         // Do the work
-        job();
+        task();
+
     }
 }
 
-template <typename Job> template <typename... ArgTypes>
-void WorkerPool<Job>::emplace(ArgTypes&&... args)
+template <typename Task> template <typename... ArgTypes>
+void WorkerPool<Task>::emplace(ArgTypes&&... args)
 {
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        queue_.emplace(std::forward<ArgTypes>(args)...);
+        std::lock_guard<std::mutex> lock(command_mutex_);
+        task_queue_.emplace(std::forward<ArgTypes>(args)...);
     }
-    cond_.notify_one();
+    command_cond_var_.notify_one();
 }
 
-template <typename Job> template <typename U>
-void WorkerPool<Job>::push(U&& job)
+template <typename Task> template <typename ArgType>
+void WorkerPool<Task>::push(ArgType&& task)
 {
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        queue_.push(std::forward<U>(job));
+        std::lock_guard<std::mutex> lock(command_mutex_);
+        task_queue_.push(std::forward<ArgType>(task));
     }
-    cond_.notify_one();
+    command_cond_var_.notify_one();
 }
 
-template <typename Job>
-void WorkerPool<Job>::stop()
+template <typename Task>
+void WorkerPool<Task>::stop()
 {
-    stop_ = true;
-    cond_.notify_all();
+    {
+        std::lock_guard<std::mutex> lock(command_mutex_);
+        command_ = command::stop;
+    }
+    command_cond_var_.notify_all();
 }
 
 #endif
