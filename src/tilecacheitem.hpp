@@ -22,6 +22,7 @@
 #define TILECACHEITEM_HPP_INCLUDED
 
 #include <atomic>
+#include <memory>
 #include <mutex>
 #include <string>
 
@@ -35,7 +36,7 @@ namespace osmview
 
 class TileCache;
 
-class TileCacheItem
+class TileCacheItem : public std::enable_shared_from_this<TileCacheItem>
 {
 public:
     enum class state_t

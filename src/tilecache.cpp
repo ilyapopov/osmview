@@ -32,8 +32,7 @@
 osmview::TileCache::TileCache(const std::string &tile_dir,
                               const std::string &url_base,
                               SDL2pp::Renderer &renderer,
-                              size_t max_size)
-    :
+                              size_t max_size) :
     tile_dir_(tile_dir),
     url_base_(url_base),
     fetcher_pool_(std::thread::hardware_concurrency()),
@@ -47,8 +46,7 @@ osmview::TileCache::TileCache(const std::string &tile_dir,
 osmview::TileCache::~TileCache()
 {}
 
-SDL2pp::Texture & osmview::TileCache::get_texture(int level, int i, int j,
-                                                  size_t timestamp)
+osmview::TileCacheItem &osmview::TileCache::get_item(int level, int i, int j)
 {
     if (level < 0 || i < 0 || j < 0 || i >= (1<<level) || j >= (1<<level))
     {
@@ -58,37 +56,48 @@ SDL2pp::Texture & osmview::TileCache::get_texture(int level, int i, int j,
     }
 
     key_t key = make_key(level, i, j);
-    
-    map_t::iterator p = cache_.find(key);
+
+    auto p = cache_.find(key);
 
     if (p == cache_.end())
     {
-        //if (size() >= max_size_)
-        //{
-        //    gc();
-        //}
+        if (size() >= max_size_)
+        {
+            gc();
+        }
 
         std::string file_name = make_file_name(level, i, j);
         std::string url = make_url(level, i, j);
-        
-        std::unique_ptr<TileCacheItem> tci(new TileCacheItem(this, key, file_name, url));
-        p = cache_.emplace(key, std::move(tci)).first;
+
+        auto item = std::make_shared<TileCacheItem>(this, key, file_name, url);
+        request_load(item);
+
+        p = cache_.emplace(key, item).first;
     }
 
-    auto & texture = p->second->get_texture(renderer_, timestamp);
+    return *(p->second);
+}
+
+void osmview::TileCache::prefetch(int level, int i, int j)
+{
+    get_item(level, i, j);
+}
+
+SDL2pp::Texture & osmview::TileCache::get_texture(int level, int i, int j,
+                                                  size_t timestamp)
+{
+    auto & item = get_item(level, i, j);
+
+    auto & texture = item.get_texture(renderer_, timestamp);
 
     if (texture)
         return *texture;
 
-
-    return *special_tiles_.at((int)p->second->state());
+    return *special_tiles_.at((int)item.state());
 }
 
 void osmview::TileCache::gc()
 {
-    // Not thread safe: can delete tiles while downloading or loading!!!
-    throw std::logic_error("Garbage collection not implemented correctly yet");
-
     size_t before = cache_.size();
 
     std::vector<size_t> timestamps;
@@ -99,7 +108,7 @@ void osmview::TileCache::gc()
         timestamps.push_back(item.second->access_timestamp());
     }
 
-    // Will remove the oldest quarter of tiles
+    // Remove the oldest quarter of tiles
     auto threshold_pos = timestamps.begin() + timestamps.size() / 4;
     std::nth_element(timestamps.begin(), timestamps.end(), threshold_pos);
     size_t threshold = *threshold_pos;
@@ -173,12 +182,12 @@ SDL2pp::Texture osmview::TileCache::generate_text_tile(const std::string &text, 
     return SDL2pp::Texture(renderer_, tile);
 }
 
-void osmview::TileCache::request_load(TileCacheItem * item)
+void osmview::TileCache::request_load(std::shared_ptr<TileCacheItem> item)
 {
     fetcher_pool_.emplace([item](){item->load();});
 }
 
-void osmview::TileCache::request_download(TileCacheItem * item)
+void osmview::TileCache::request_download(std::shared_ptr<TileCacheItem> item)
 {
     downloader_pool_.emplace([item](){item->download();});
 }

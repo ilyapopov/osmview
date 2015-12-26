@@ -44,7 +44,7 @@ class TileCacheItem;
 class TileCache
 {
     typedef std::string key_t;
-    typedef std::unordered_map<key_t, std::unique_ptr<TileCacheItem>> map_t;
+    typedef std::unordered_map<key_t, std::shared_ptr<TileCacheItem>> map_t;
 
     std::string tile_dir_;
     std::string url_base_;
@@ -79,10 +79,12 @@ public:
         return cache_.size();
     }
 
+    TileCacheItem & get_item(int level, int i, int j);
+    void prefetch(int level, int i, int j);
     SDL2pp::Texture & get_texture(int level, int i, int j, size_t timestamp);
     
-    void request_load(TileCacheItem * item);
-    void request_download(TileCacheItem * item);
+    void request_load(std::shared_ptr<TileCacheItem>);
+    void request_download(std::shared_ptr<TileCacheItem>);
 
     void download(const std::string & url, const std::string & file_name)
     {

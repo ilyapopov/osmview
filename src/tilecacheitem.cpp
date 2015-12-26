@@ -36,7 +36,6 @@ osmview::TileCacheItem::TileCacheItem(TileCache * cache, const std::string &id,
     state_(state_t::free)
 {
     state_ = state_t::scheduled_for_loading;
-    cache->request_load(this);
 }
 
 void osmview::TileCacheItem::load()
@@ -57,7 +56,7 @@ void osmview::TileCacheItem::load()
     catch (SDL2pp::Exception &e)
     {
         state_ = state_t::scheduled_for_downloading;
-        cache_->request_download(this);
+        cache_->request_download(shared_from_this());
     }
 }
 
@@ -70,7 +69,7 @@ void osmview::TileCacheItem::download()
         cache_->download(url_, file_name_);
 
         state_ = state_t::scheduled_for_loading;
-        cache_->request_load(this);
+        cache_->request_load(shared_from_this());
     }
     catch (std::exception & e)
     {
