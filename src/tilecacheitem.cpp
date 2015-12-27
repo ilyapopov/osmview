@@ -33,7 +33,8 @@ osmview::TileCacheItem::TileCacheItem(TileCache * cache, const std::string &id,
     file_name_(file_name),
     url_(url),
     cache_(cache),
-    state_(state_t::free)
+    state_(state_t::free),
+    last_access_timestamp_(0u)
 {
     state_ = state_t::scheduled_for_loading;
 }

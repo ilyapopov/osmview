@@ -80,7 +80,7 @@ public:
     }
 
     TileCacheItem & get_item(int level, int i, int j);
-    void prefetch(int level, int i, int j);
+    void prefetch(int level, int i, int j, size_t timestamp);
     SDL2pp::Texture & get_texture(int level, int i, int j, size_t timestamp);
     
     void request_load(std::shared_ptr<TileCacheItem>);

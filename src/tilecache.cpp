@@ -24,6 +24,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 #include <SDL2pp/Surface.hh>
 
@@ -55,7 +56,7 @@ osmview::TileCacheItem &osmview::TileCache::get_item(int level, int i, int j)
         throw std::logic_error(oss.str());
     }
 
-    key_t key = make_key(level, i, j);
+    auto key = make_key(level, i, j);
 
     auto p = cache_.find(key);
 
@@ -78,15 +79,17 @@ osmview::TileCacheItem &osmview::TileCache::get_item(int level, int i, int j)
     return *(p->second);
 }
 
-void osmview::TileCache::prefetch(int level, int i, int j)
+void osmview::TileCache::prefetch(int level, int i, int j, size_t timestamp)
 {
-    get_item(level, i, j);
+    auto & item = get_item(level, i, j);
+    item.set_timestamp(timestamp);
 }
 
 SDL2pp::Texture & osmview::TileCache::get_texture(int level, int i, int j,
                                                   size_t timestamp)
 {
     auto & item = get_item(level, i, j);
+    item.set_timestamp(timestamp);
 
     auto & texture = item.get_texture(renderer_, timestamp);
 
@@ -98,35 +101,21 @@ SDL2pp::Texture & osmview::TileCache::get_texture(int level, int i, int j,
 
 void osmview::TileCache::gc()
 {
-    size_t before = cache_.size();
-
-    std::vector<size_t> timestamps;
+    std::vector<std::pair<size_t, key_t>> timestamps;
     timestamps.reserve(cache_.size());
 
     for (const auto & item: cache_)
     {
-        timestamps.push_back(item.second->access_timestamp());
+        timestamps.emplace_back(item.second->access_timestamp(), item.first);
     }
 
-    // Remove the oldest quarter of tiles
-    auto threshold_pos = timestamps.begin() + timestamps.size() / 4;
-    std::nth_element(timestamps.begin(), timestamps.end(), threshold_pos);
-    size_t threshold = *threshold_pos;
+    std::sort(timestamps.begin(), timestamps.end());
 
-    auto i = cache_.begin();
-    while (i != cache_.end())
+    for (auto i = timestamps.begin();
+         i != timestamps.begin() + timestamps.size()/4; ++i)
     {
-        if (i->second->access_timestamp() < threshold)
-        {
-            i = cache_.erase(i);
-        }
-        else
-        {
-            ++i;
-        }
+        cache_.erase(i->second);
     }
-
-    std::cout << "Garbage collected: " << before << " -> " << cache_.size() << std::endl;
 }
 
 osmview::TileCache::key_t osmview::TileCache::make_key(int level, int i, int j)

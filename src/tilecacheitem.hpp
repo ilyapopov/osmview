@@ -86,6 +86,11 @@ public:
     {
         return last_access_timestamp_;
     }
+
+    void set_timestamp(size_t timestamp)
+    {
+        last_access_timestamp_ = timestamp;
+    }
 };
 
 }
