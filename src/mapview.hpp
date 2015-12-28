@@ -72,7 +72,7 @@ class Mapview
 
 public:
 
-    Mapview(SDL2pp::Renderer &renderer);
+    explicit Mapview(SDL2pp::Renderer &renderer);
     ~Mapview();
     
     void center_on_latlon(double lat, double lon);

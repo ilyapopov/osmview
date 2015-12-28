@@ -77,7 +77,7 @@ class ScopedTimer : public Timer
     std::string label_;
 
 public:
-    ScopedTimer(std::string label)
+    explicit ScopedTimer(std::string label)
         : label_(std::move(label))
     {
         std::cout << label_ << " started" << std::endl;
