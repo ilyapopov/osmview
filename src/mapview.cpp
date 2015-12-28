@@ -133,10 +133,10 @@ void osmview::Mapview::render()
     double xc = mapx_ * tile_scale;
     double yc = mapy_ * tile_scale;
     
-    double xmin = xc - 0.5 * w / tile_size_;
-    double xmax = xc + 0.5 * w / tile_size_;
-    double ymin = yc - 0.5 * h / tile_size_;
-    double ymax = yc + 0.5 * h / tile_size_;
+    double xmin = xc - 0.5 * w / scaled_size;
+    double xmax = xc + 0.5 * w / scaled_size;
+    double ymin = yc - 0.5 * h / scaled_size;
+    double ymax = yc + 0.5 * h / scaled_size;
     
     int imin = std::floor(xmin);
     int imax = std::ceil(xmax);
