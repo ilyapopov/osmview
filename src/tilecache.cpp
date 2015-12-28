@@ -170,10 +170,10 @@ SDL2pp::Texture osmview::TileCache::generate_text_tile(const std::string &text, 
 
 void osmview::TileCache::request_load(std::shared_ptr<TileCacheItem> item)
 {
-    fetcher_pool_.emplace([item](){item->load();});
+    fetcher_pool_.emplace([item](){if (item.use_count() > 1) item->load();});
 }
 
 void osmview::TileCache::request_download(std::shared_ptr<TileCacheItem> item)
 {
-    downloader_pool_.emplace([item](){item->download();});
+    downloader_pool_.emplace([item](){if (item.use_count() > 1) item->download();});
 }
