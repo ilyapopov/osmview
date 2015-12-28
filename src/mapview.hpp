@@ -66,6 +66,10 @@ class Mapview
     SDL2pp::Point to_screen(double x, double y);
     std::pair<double, double> from_screen(const SDL2pp::Point &point);
 
+    void for_all_tiles(int tile_level,
+                       std::function<void(const SDL2pp::Point &, const SDL2pp::Rect &)> func);
+
+
 public:
 
     Mapview(SDL2pp::Renderer &renderer);

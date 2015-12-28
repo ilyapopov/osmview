@@ -110,54 +110,28 @@ void osmview::Mapview::move_pix_hard(double dx, double dy)
 int osmview::Mapview::zoom(int step)
 {
     target_level_ = clamp(target_level_ + step, 0, max_level_);
-        
+
+    for_all_tiles(target_level_,
+                  [&](const SDL2pp::Point & tile_coord, const SDL2pp::Rect & /*rect*/)
+    {
+        cache_->prefetch(target_level_, tile_coord.x, tile_coord.y, frame_num_);
+    });
+
+
     return target_level_;
 }
 
 void osmview::Mapview::render()
 {
     ++frame_num_;
-
-    output_size_ = renderer_.GetOutputSize();
-
-    int w = output_size_.x;
-    int h = output_size_.y;
-
     int tile_level = std::round(level_);
-    double tile_scale = std::pow(2.0, (double)tile_level);
-    int n = 1 << tile_level;
 
-    double tile_draw_scale = std::pow(2.0, level_ - tile_level);
-    int scaled_size = tile_draw_scale * tile_size_;
-
-    double xc = mapx_ * tile_scale;
-    double yc = mapy_ * tile_scale;
-    
-    double xmin = xc - 0.5 * w / scaled_size;
-    double xmax = xc + 0.5 * w / scaled_size;
-    double ymin = yc - 0.5 * h / scaled_size;
-    double ymax = yc + 0.5 * h / scaled_size;
-    
-    int imin = std::floor(xmin);
-    int imax = std::ceil(xmax);
-    int jmin = std::max((int)std::floor(ymin), 0);
-    int jmax = std::min((int)std::ceil(ymax), n);
-
-    for(int i = imin; i < imax; ++i)
+    for_all_tiles(tile_level,
+                  [&](const SDL2pp::Point & tile_coord, const SDL2pp::Rect & rect)
     {
-        int i1 = wrap(i, 0, n);
-
-        for(int j = jmin; j < jmax; ++j)
-        {
-            auto & tile = cache_->get_texture(tile_level, i1, j, frame_num_);
-
-            int a = std::floor((w/2) + scaled_size * (i - xc));
-            int b = std::floor((h/2) + scaled_size * (j - yc));
-                
-            SDL2pp::Rect rect(a, b, scaled_size, scaled_size);
-            renderer_.Copy(tile, SDL2pp::NullOpt, rect);
-        }
-    }
+        auto & tile = cache_->get_texture(tile_level, tile_coord.x, tile_coord.y, frame_num_);
+        renderer_.Copy(tile, SDL2pp::NullOpt, rect);
+    });
 
     SDL2pp::Rect rect(output_size_ - credits_texture_->GetSize(),
                       credits_texture_->GetSize());
@@ -182,4 +156,47 @@ void osmview::Mapview::update(double dt)
         level_ = target_level_;
     level_ = clamp(level_, 0.0, (double)max_level_);
     scale_ = std::pow(2.0, level_);
+}
+
+void osmview::Mapview::for_all_tiles(int tile_level,
+                                     std::function<void(const SDL2pp::Point &,
+                                                        const SDL2pp::Rect &)> func)
+{
+    output_size_ = renderer_.GetOutputSize();
+
+    int w = output_size_.x;
+    int h = output_size_.y;
+
+    double tile_scale = std::pow(2.0, (double)tile_level);
+    int n = 1 << tile_level;
+
+    double tile_draw_scale = std::pow(2.0, level_ - tile_level);
+    int scaled_size = tile_draw_scale * tile_size_;
+
+    double xc = mapx_ * tile_scale;
+    double yc = mapy_ * tile_scale;
+
+    double xmin = xc - 0.5 * w / scaled_size;
+    double xmax = xc + 0.5 * w / scaled_size;
+    double ymin = yc - 0.5 * h / scaled_size;
+    double ymax = yc + 0.5 * h / scaled_size;
+
+    int imin = std::floor(xmin);
+    int imax = std::ceil(xmax);
+    int jmin = std::max((int)std::floor(ymin), 0);
+    int jmax = std::min((int)std::ceil(ymax), n);
+
+    for(int i = imin; i < imax; ++i)
+    {
+        int i1 = wrap(i, 0, n);
+
+        for(int j = jmin; j < jmax; ++j)
+        {
+            int a = std::floor((w/2) + scaled_size * (i - xc));
+            int b = std::floor((h/2) + scaled_size * (j - yc));
+            SDL2pp::Rect rect(a, b, scaled_size, scaled_size);
+
+            func(SDL2pp::Point(i1, j), rect);
+        }
+    }
 }
