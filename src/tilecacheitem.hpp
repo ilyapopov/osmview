@@ -51,7 +51,6 @@ public:
     };
 
 private:
-    const std::string id_;
     const std::string file_name_;
     const std::string url_;
     SDL2pp::Optional<SDL2pp::Surface> surface_;
@@ -63,19 +62,13 @@ private:
 
 public:
 
-    TileCacheItem(TileCache * cache, const std::string & id,
+    TileCacheItem(TileCache * cache,
                   const std::string & file_name, const std::string & url);
 
     void load();
     void download();
 
-    SDL2pp::Optional<SDL2pp::Texture> &get_texture(SDL2pp::Renderer &renderer,
-                                                   size_t timestamp);
-
-    std::string id() const
-    {
-        return id_;
-    }
+    SDL2pp::Optional<SDL2pp::Texture> &get_texture(SDL2pp::Renderer &renderer);
 
     state_t state() const
     {

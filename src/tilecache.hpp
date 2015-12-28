@@ -43,7 +43,7 @@ class TileCacheItem;
 
 class TileCache
 {
-    typedef std::string key_t;
+    typedef uint64_t key_t;
     typedef std::unordered_map<key_t, std::shared_ptr<TileCacheItem>> map_t;
 
     std::string tile_dir_;
