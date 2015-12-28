@@ -26,10 +26,9 @@
 
 #include "tilecache.hpp"
 
-osmview::TileCacheItem::TileCacheItem(TileCache * cache, const std::string &id,
+osmview::TileCacheItem::TileCacheItem(TileCache * cache,
                                       const std::string &file_name,
                                       const std::string &url) :
-    id_(id),
     file_name_(file_name),
     url_(url),
     cache_(cache),
@@ -81,21 +80,18 @@ void osmview::TileCacheItem::download()
 }
 
 SDL2pp::Optional<SDL2pp::Texture> &osmview::TileCacheItem::get_texture(
-        SDL2pp::Renderer &renderer, size_t timestamp)
+        SDL2pp::Renderer &renderer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-
-    last_access_timestamp_ = timestamp;
 
     // Texture operations are not thread safe, thus done here
     if (surface_ && !texture_)
     {
-        texture_ = SDL2pp::Texture(renderer, *surface_);
+        texture_.emplace(renderer, *surface_);
 
         // delete the surface
         surface_ = SDL2pp::NullOpt;
     }
-
 
     return texture_;
 }

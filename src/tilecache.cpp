@@ -70,7 +70,7 @@ osmview::TileCacheItem &osmview::TileCache::get_item(int level, int i, int j)
         std::string file_name = make_file_name(level, i, j);
         std::string url = make_url(level, i, j);
 
-        auto item = std::make_shared<TileCacheItem>(this, key, file_name, url);
+        auto item = std::make_shared<TileCacheItem>(this, file_name, url);
         request_load(item);
 
         p = cache_.emplace(key, item).first;
@@ -91,7 +91,7 @@ SDL2pp::Texture & osmview::TileCache::get_texture(int level, int i, int j,
     auto & item = get_item(level, i, j);
     item.set_timestamp(timestamp);
 
-    auto & texture = item.get_texture(renderer_, timestamp);
+    auto & texture = item.get_texture(renderer_);
 
     if (texture)
         return *texture;
@@ -120,10 +120,7 @@ void osmview::TileCache::gc()
 
 osmview::TileCache::key_t osmview::TileCache::make_key(int level, int i, int j)
 {
-    std::ostringstream ss;
-    ss << level << '/' << i << '/' << j;
-
-    return ss.str();
+    return ((uint64_t)level << 44) | ((uint64_t)i << 22) | (uint64_t)j;
 }
 
 std::string osmview::TileCache::make_file_name(int level, int i, int j) const
