@@ -24,8 +24,11 @@
 #include <memory>
 #include <string>
 
-#include <SDL2pp/Renderer.hh>
+#include <SDL2pp/Font.hh>
+#include <SDL2pp/Optional.hh>
 #include <SDL2pp/Point.hh>
+#include <SDL2pp/Renderer.hh>
+#include <SDL2pp/Texture.hh>
 
 namespace osmview
 {
@@ -56,6 +59,9 @@ class Mapview
     SDL2pp::Point output_size_;
 
     size_t frame_num_;
+
+    SDL2pp::Font font_;
+    SDL2pp::Optional<SDL2pp::Texture> credits_texture_;
 
     SDL2pp::Point to_screen(double x, double y);
     std::pair<double, double> from_screen(const SDL2pp::Point &point);

@@ -69,13 +69,19 @@ osmview::Mapview::Mapview(SDL2pp::Renderer &renderer)
     vx_(0.0), vy_(0.0), fx_(0.0), fy_(0.0),
     target_level_(1), level_(1.0), scale_(1.0),
     renderer_(renderer), output_size_(renderer_.GetOutputSize()),
-    frame_num_(0)
+    frame_num_(0),
+    font_("data/ClearSans-Medium.ttf", 12)
 {
     std::string server_name("tile.openstreetmap.org");
 
     cache_.reset(new TileCache(get_user_cache_dir() + "/maps/" + server_name,
                            "http://" + server_name,
                            renderer));
+
+    SDL2pp::Surface credits_surface = font_.RenderUTF8_Shaded(
+        "Cartography © OpenStreetMap contributors | CC BY-SA | openstreetmap.org",
+        {128, 128, 128, 0}, {255, 255, 255, 0});
+    credits_texture_.emplace(renderer_, credits_surface);
 }
 
 osmview::Mapview::~Mapview()
@@ -148,10 +154,14 @@ void osmview::Mapview::render()
             int a = std::floor((w/2) + scaled_size * (i - xc));
             int b = std::floor((h/2) + scaled_size * (j - yc));
                 
-            SDL2pp::Rect rect = {a, b, scaled_size, scaled_size};
+            SDL2pp::Rect rect(a, b, scaled_size, scaled_size);
             renderer_.Copy(tile, SDL2pp::NullOpt, rect);
         }
     }
+
+    SDL2pp::Rect rect(output_size_ - credits_texture_->GetSize(),
+                      credits_texture_->GetSize());
+    renderer_.Copy(*credits_texture_, SDL2pp::NullOpt, rect);
 }
 
 void osmview::Mapview::update(double dt)
