@@ -1,7 +1,6 @@
 TODO
 ====
 
-- Add OpenStreetMap credits
 - Add proper zoom on mouse cursor
 - Remove from queue the tiles which are not needed any more
 - Show tiles from another level in place of missing ones (if already loaded)
@@ -15,7 +14,8 @@ TODO
 Done
 ====
 
-- Add garbage collection **[Done]**
-- Update license notice in source files. **[Done]**
-- Show tile state **[Done]**
-- Smooth zoom **[Done]**
+- Add OpenStreetMap credits
+- Add garbage collection
+- Update license notice in source files.
+- Show tile state
+- Smooth zoom
