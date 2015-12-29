@@ -68,7 +68,7 @@ osmview::Mapview::Mapview(SDL2pp::Renderer &renderer)
     target_level_(1), level_(1.0), scale_(1.0),
     renderer_(renderer), output_size_(renderer_.GetOutputSize()),
     frame_num_(0),
-    font_("data/ClearSans-Medium.ttf", 12)
+    font_("data/DejaVuSans.ttf", 12)
 {
     std::string server_name("tile.openstreetmap.org");
 
@@ -114,7 +114,6 @@ int osmview::Mapview::zoom(int step)
     {
         cache_->prefetch(tile_id, frame_num_);
     });
-
 
     return target_level_;
 }
