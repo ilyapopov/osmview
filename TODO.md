@@ -4,7 +4,6 @@ TODO
 - Add proper zoom on mouse cursor
 - Remove from queue the tiles which are not needed any more
 - Show tiles from another level in place of missing ones (if already loaded)
-- Load tiles starting from center
 - Scale (km/miles/nm)
 - Ruler
 - Display current coordinates
@@ -14,6 +13,7 @@ TODO
 Done
 ====
 
+- Load tiles starting from center
 - Add OpenStreetMap credits
 - Add garbage collection
 - Update license notice in source files.
