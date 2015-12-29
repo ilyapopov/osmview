@@ -20,13 +20,11 @@
 
 #include "mapview.hpp"
 
-#include <cmath>
 #include <cstdlib>
 
 #include <SDL2pp/Rect.hh>
 #include <SDL2pp/Renderer.hh>
 
-#include "coord.hpp"
 #include "tilecache.hpp"
 
 const double osmview::Mapview::v0_ = 2.0;
@@ -158,45 +156,4 @@ void osmview::Mapview::update(double dt)
     scale_ = std::pow(2.0, level_);
 }
 
-void osmview::Mapview::for_all_tiles(int tile_level,
-                                     std::function<void(TileId,
-                                                        const SDL2pp::Rect &)> func)
-{
-    output_size_ = renderer_.GetOutputSize();
 
-    int w = output_size_.x;
-    int h = output_size_.y;
-
-    double tile_scale = std::pow(2.0, (double)tile_level);
-    int n = 1 << tile_level;
-
-    double tile_draw_scale = std::pow(2.0, level_ - tile_level);
-    int scaled_size = tile_draw_scale * tile_size_;
-
-    double xc = mapx_ * tile_scale;
-    double yc = mapy_ * tile_scale;
-
-    double xmin = xc - 0.5 * w / scaled_size;
-    double xmax = xc + 0.5 * w / scaled_size;
-    double ymin = yc - 0.5 * h / scaled_size;
-    double ymax = yc + 0.5 * h / scaled_size;
-
-    int imin = std::floor(xmin);
-    int imax = std::ceil(xmax);
-    int jmin = std::max((int)std::floor(ymin), 0);
-    int jmax = std::min((int)std::ceil(ymax), n);
-
-    for(int i = imin; i < imax; ++i)
-    {
-        int i1 = wrap(i, 0, n);
-
-        for(int j = jmin; j < jmax; ++j)
-        {
-            int a = std::floor((w/2) + scaled_size * (i - xc));
-            int b = std::floor((h/2) + scaled_size * (j - yc));
-            SDL2pp::Rect rect(a, b, scaled_size, scaled_size);
-
-            func({tile_level, i1, j}, rect);
-        }
-    }
-}
