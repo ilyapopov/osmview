@@ -127,7 +127,7 @@ std::string osmview::TileCache::make_url(key_type tile_id) const
 
 void osmview::TileCache::generate_special_tiles()
 {
-    SDL2pp::Font font("data/ClearSans-Medium.ttf", 24);
+    SDL2pp::Font font("data/DejaVuSans.ttf", 24);
     special_tiles_.emplace((int)TileCacheItem::state_t::loading,
                            generate_text_tile("Loading...", font));
     special_tiles_.emplace((int)TileCacheItem::state_t::downloading,
