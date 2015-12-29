@@ -20,6 +20,8 @@
 
 #include "mapview.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 
 #include <SDL2pp/Rect.hh>
@@ -109,11 +111,10 @@ int osmview::Mapview::zoom(int step)
 {
     target_level_ = clamp(target_level_ + step, 0, max_level_);
 
-    for_all_tiles(target_level_,
-                  [&](TileId tile_id, const SDL2pp::Rect & /*rect*/)
+    for (const auto & p: visible_tiles(target_level_, VisitOrder::from_center))
     {
-        cache_->prefetch(tile_id, frame_num_);
-    });
+        cache_->prefetch(p.first, frame_num_);
+    }
 
     return target_level_;
 }
@@ -123,12 +124,11 @@ void osmview::Mapview::render()
     ++frame_num_;
     int tile_level = std::round(level_);
 
-    for_all_tiles(tile_level,
-                  [&](TileId tile_id, const SDL2pp::Rect & rect)
+    for (const auto & p: visible_tiles(tile_level, VisitOrder::from_center))
     {
-        auto & texture = cache_->get_texture(tile_id, frame_num_);
-        renderer_.Copy(texture, SDL2pp::NullOpt, rect);
-    });
+        auto & texture = cache_->get_texture(p.first, frame_num_);
+        renderer_.Copy(texture, SDL2pp::NullOpt, p.second);
+    }
 
     SDL2pp::Rect rect(output_size_ - credits_texture_->GetSize(),
                       credits_texture_->GetSize());
@@ -155,4 +155,69 @@ void osmview::Mapview::update(double dt)
     scale_ = std::pow(2.0, level_);
 }
 
+namespace
+{
+    inline int length_squared(const SDL2pp::Point & p)
+    {
+        return p.x*p.x + p.y*p.y;
+    }
+}
 
+std::vector<std::pair<osmview::TileId, SDL2pp::Rect> >
+osmview::Mapview::visible_tiles(int tile_level,
+                                osmview::Mapview::VisitOrder order)
+{
+    output_size_ = renderer_.GetOutputSize();
+
+    double w = output_size_.x;
+    double h = output_size_.y;
+
+    double tile_scale = std::pow(2.0, (double)tile_level);
+    int n = 1 << tile_level;
+
+    double tile_draw_scale = std::pow(2.0, level_ - tile_level);
+    int scaled_size = tile_draw_scale * tile_size_;
+
+    double xc = mapx_ * tile_scale;
+    double yc = mapy_ * tile_scale;
+
+    double xmin = xc - 0.5 * w / scaled_size;
+    double xmax = xc + 0.5 * w / scaled_size;
+    double ymin = yc - 0.5 * h / scaled_size;
+    double ymax = yc + 0.5 * h / scaled_size;
+
+    int imin = std::floor(xmin);
+    int imax = std::ceil(xmax);
+    int jmin = std::max((int)std::floor(ymin), 0);
+    int jmax = std::min((int)std::ceil(ymax), n);
+
+    std::vector<std::pair<TileId, SDL2pp::Rect>> tiles;
+    tiles.reserve((output_size_.x / scaled_size + 1)
+                             * (output_size_.y / scaled_size + 1));
+
+    for(int i = imin; i < imax; ++i)
+    {
+        int i1 = wrap(i, 0, n);
+
+        for(int j = jmin; j < jmax; ++j)
+        {
+            int a = std::round((w/2) + scaled_size * (i - xc));
+            int b = std::round((h/2) + scaled_size * (j - yc));
+            SDL2pp::Rect rect(a, b, scaled_size, scaled_size);
+
+            tiles.emplace_back(TileId(tile_level, i1, j), rect);
+        }
+    }
+
+    if (order == VisitOrder::from_center)
+    {
+        std::sort(tiles.begin(), tiles.end(),
+                  [&](const std::pair<TileId, SDL2pp::Rect> & lhs,
+                  const std::pair<TileId, SDL2pp::Rect> & rhs){
+            return length_squared(lhs.second.GetCentroid() - output_size_/2)
+                    < length_squared(rhs.second.GetCentroid() - output_size_/2);
+        });
+    }
+
+    return tiles;
+}
