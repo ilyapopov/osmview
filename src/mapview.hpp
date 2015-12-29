@@ -30,6 +30,8 @@
 #include <SDL2pp/Renderer.hh>
 #include <SDL2pp/Texture.hh>
 
+#include "tileid.hpp"
+
 namespace osmview
 {
 
@@ -67,7 +69,7 @@ class Mapview
     std::pair<double, double> from_screen(const SDL2pp::Point &point);
 
     void for_all_tiles(int tile_level,
-                       std::function<void(const SDL2pp::Point &, const SDL2pp::Rect &)> func);
+                       std::function<void(TileId, const SDL2pp::Rect &)> func);
 
 
 public:

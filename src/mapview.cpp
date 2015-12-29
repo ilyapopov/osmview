@@ -112,9 +112,9 @@ int osmview::Mapview::zoom(int step)
     target_level_ = clamp(target_level_ + step, 0, max_level_);
 
     for_all_tiles(target_level_,
-                  [&](const SDL2pp::Point & tile_coord, const SDL2pp::Rect & /*rect*/)
+                  [&](TileId tile_id, const SDL2pp::Rect & /*rect*/)
     {
-        cache_->prefetch(target_level_, tile_coord.x, tile_coord.y, frame_num_);
+        cache_->prefetch(tile_id, frame_num_);
     });
 
 
@@ -127,10 +127,10 @@ void osmview::Mapview::render()
     int tile_level = std::round(level_);
 
     for_all_tiles(tile_level,
-                  [&](const SDL2pp::Point & tile_coord, const SDL2pp::Rect & rect)
+                  [&](TileId tile_id, const SDL2pp::Rect & rect)
     {
-        auto & tile = cache_->get_texture(tile_level, tile_coord.x, tile_coord.y, frame_num_);
-        renderer_.Copy(tile, SDL2pp::NullOpt, rect);
+        auto & texture = cache_->get_texture(tile_id, frame_num_);
+        renderer_.Copy(texture, SDL2pp::NullOpt, rect);
     });
 
     SDL2pp::Rect rect(output_size_ - credits_texture_->GetSize(),
@@ -159,7 +159,7 @@ void osmview::Mapview::update(double dt)
 }
 
 void osmview::Mapview::for_all_tiles(int tile_level,
-                                     std::function<void(const SDL2pp::Point &,
+                                     std::function<void(TileId,
                                                         const SDL2pp::Rect &)> func)
 {
     output_size_ = renderer_.GetOutputSize();
@@ -196,7 +196,7 @@ void osmview::Mapview::for_all_tiles(int tile_level,
             int b = std::floor((h/2) + scaled_size * (j - yc));
             SDL2pp::Rect rect(a, b, scaled_size, scaled_size);
 
-            func(SDL2pp::Point(i1, j), rect);
+            func({tile_level, i1, j}, rect);
         }
     }
 }

@@ -37,7 +37,7 @@ osmview::TileCache::TileCache(const std::string &tile_dir,
     tile_dir_(tile_dir),
     url_base_(url_base),
     fetcher_pool_(std::thread::hardware_concurrency()),
-    downloader_pool_(16),
+    downloader_pool_(8),
     renderer_(renderer),
     max_size_(max_size)
 {
@@ -47,18 +47,9 @@ osmview::TileCache::TileCache(const std::string &tile_dir,
 osmview::TileCache::~TileCache()
 {}
 
-osmview::TileCacheItem &osmview::TileCache::get_item(int level, int i, int j)
+osmview::TileCacheItem &osmview::TileCache::get_item(key_type tile_id)
 {
-    if (level < 0 || i < 0 || j < 0 || i >= (1<<level) || j >= (1<<level))
-    {
-        std::ostringstream oss;
-        oss << "Requested wrong tile coordinates: "<< level << ' ' << i << ' ' << j;
-        throw std::logic_error(oss.str());
-    }
-
-    auto key = make_key(level, i, j);
-
-    auto p = cache_.find(key);
+    auto p = cache_.find(tile_id);
 
     if (p == cache_.end())
     {
@@ -67,28 +58,28 @@ osmview::TileCacheItem &osmview::TileCache::get_item(int level, int i, int j)
             gc();
         }
 
-        std::string file_name = make_file_name(level, i, j);
-        std::string url = make_url(level, i, j);
+        std::string file_name = make_file_name(tile_id);
+        std::string url = make_url(tile_id);
 
         auto item = std::make_shared<TileCacheItem>(this, file_name, url);
         request_load(item);
 
-        p = cache_.emplace(key, item).first;
+        p = cache_.emplace(tile_id, item).first;
     }
 
     return *(p->second);
 }
 
-void osmview::TileCache::prefetch(int level, int i, int j, size_t timestamp)
+void osmview::TileCache::prefetch(key_type tile_id, size_t timestamp)
 {
-    auto & item = get_item(level, i, j);
+    auto & item = get_item(tile_id);
     item.set_timestamp(timestamp);
 }
 
-SDL2pp::Texture & osmview::TileCache::get_texture(int level, int i, int j,
+SDL2pp::Texture & osmview::TileCache::get_texture(key_type tile_id,
                                                   size_t timestamp)
 {
-    auto & item = get_item(level, i, j);
+    auto & item = get_item(tile_id);
     item.set_timestamp(timestamp);
 
     auto & texture = item.get_texture(renderer_);
@@ -101,7 +92,7 @@ SDL2pp::Texture & osmview::TileCache::get_texture(int level, int i, int j,
 
 void osmview::TileCache::gc()
 {
-    std::vector<std::pair<size_t, key_t>> timestamps;
+    std::vector<std::pair<size_t, key_type>> timestamps;
     timestamps.reserve(cache_.size());
 
     for (const auto & item: cache_)
@@ -118,26 +109,19 @@ void osmview::TileCache::gc()
     }
 }
 
-osmview::TileCache::key_t osmview::TileCache::make_key(int level, int i, int j)
-{
-    return ((uint64_t)level << 44) | ((uint64_t)i << 22) | (uint64_t)j;
-}
 
-std::string osmview::TileCache::make_file_name(int level, int i, int j) const
+
+std::string osmview::TileCache::make_file_name(key_type tile_id) const
 {
     std::ostringstream ss;
-    ss << tile_dir_ << '/';
-    ss << level << '/' << i << '/' << j << ".png";
-
+    ss << tile_dir_ << '/' << tile_id << ".png";
     return ss.str();
 }
 
-std::string osmview::TileCache::make_url(int level, int i, int j) const
+std::string osmview::TileCache::make_url(key_type tile_id) const
 {
     std::ostringstream ss;
-    ss << url_base_ << '/';
-    ss << level << '/' << i << '/' << j << ".png";
-
+    ss << url_base_ << '/' << tile_id << ".png";
     return ss.str();
 }
 

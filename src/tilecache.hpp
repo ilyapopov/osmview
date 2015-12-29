@@ -33,6 +33,7 @@
 
 #include "downloader.hpp"
 #include "worker_pool.hpp"
+#include "tileid.hpp"
 
 namespace osmview
 {
@@ -43,14 +44,14 @@ class TileCacheItem;
 
 class TileCache
 {
-    typedef uint64_t key_t;
-    typedef std::unordered_map<key_t, std::shared_ptr<TileCacheItem>> map_t;
+    using key_type = TileId;
+    using map_t = std::unordered_map<key_type, std::shared_ptr<TileCacheItem>>;
 
     std::string tile_dir_;
     std::string url_base_;
     map_t cache_;
 
-    Downloader downloader;
+    Downloader downloader_;
 
     WorkerPool<std::function<void()> > fetcher_pool_;
     WorkerPool<std::function<void()> > downloader_pool_;
@@ -62,9 +63,8 @@ class TileCache
     std::unordered_map<int, SDL2pp::Optional<SDL2pp::Texture>>
         special_tiles_;
 
-    static key_t make_key(int level, int i, int j);
-    std::string make_file_name(int level, int i, int j) const;
-    std::string make_url(int level, int i, int j) const;
+    std::string make_file_name(key_type tile_id) const;
+    std::string make_url(key_type tile_id) const;
     void generate_special_tiles();
     SDL2pp::Texture generate_text_tile(const std::string &text, SDL2pp::Font & font);
     void gc();
@@ -79,19 +79,19 @@ public:
         return cache_.size();
     }
 
-    TileCacheItem & get_item(int level, int i, int j);
-    void prefetch(int level, int i, int j, size_t timestamp);
-    SDL2pp::Texture & get_texture(int level, int i, int j, size_t timestamp);
+    TileCacheItem & get_item(key_type tile_id);
+    void prefetch(key_type tile_id, size_t timestamp);
+    SDL2pp::Texture & get_texture(key_type tile_id, size_t timestamp);
     
     void request_load(std::shared_ptr<TileCacheItem>);
     void request_download(std::shared_ptr<TileCacheItem>);
 
     void download(const std::string & url, const std::string & file_name)
     {
-        downloader.download(url, file_name);
+        downloader_.download(url, file_name);
     }
 };
 
-}
+} // namespace
 
 #endif
