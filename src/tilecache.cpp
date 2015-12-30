@@ -126,7 +126,7 @@ std::string osmview::TileCache::make_url(key_type tile_id) const
 
 void osmview::TileCache::generate_special_tiles()
 {
-    SDL2pp::Font font("data/DejaVuSans.ttf", 24);
+    SDL2pp::Font font("data/DejaVuSans.ttf", 20);
     special_tiles_.emplace((int)TileCacheItem::state_t::loading,
                            generate_text_tile("Loading...", font));
     special_tiles_.emplace((int)TileCacheItem::state_t::downloading,
@@ -143,12 +143,12 @@ SDL2pp::Texture
 osmview::TileCache::generate_text_tile(const std::string &text,
                                        SDL2pp::Font &font)
 {
-    SDL2pp::Surface tile(0, tile_size_, tile_size_, 32, 0u, 0u, 0u, 0u);
-    tile.FillRect(SDL2pp::NullOpt, 0u);
+    SDL2pp::Surface surface(0, tile_size_, tile_size_, 32, 0u, 0u, 0u, 0u);
+    surface.FillRect(SDL2pp::NullOpt, SDL_MapRGB(surface.Get()->format, 192, 192, 192));
 
-    auto text_surface = font.RenderText_Blended(text, {128, 128, 128, 0});
-    text_surface.Blit(SDL2pp::NullOpt, tile,
-    {(tile.GetSize() - text_surface.GetSize())/ 2, text_surface.GetSize()});
+    auto text_surface = font.RenderText_Blended(text, {64, 64, 64, 0});
+    text_surface.Blit(SDL2pp::NullOpt, surface,
+    {(surface.GetSize() - text_surface.GetSize())/ 2, text_surface.GetSize()});
 
-    return SDL2pp::Texture(renderer_, tile);
+    return SDL2pp::Texture(renderer_, surface);
 }

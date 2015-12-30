@@ -79,7 +79,7 @@ osmview::Mapview::Mapview(SDL2pp::Renderer &renderer)
 
     SDL2pp::Surface credits_surface = font_.RenderUTF8_Shaded(
         "Cartography © OpenStreetMap contributors | CC BY-SA | openstreetmap.org",
-        {128, 128, 128, 0}, {255, 255, 255, 0});
+        {64, 64, 64, 0}, {255, 255, 255, 0});
     credits_texture_.emplace(renderer_, credits_surface);
 }
 
