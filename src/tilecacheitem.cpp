@@ -20,7 +20,7 @@
 
 #include "tilecacheitem.hpp"
 
-#include <stdexcept>
+#include <functional>
 
 #include <SDL2pp/Exception.hh>
 
@@ -33,7 +33,7 @@ osmview::TileCacheItem::TileCacheItem(TileCache * cache,
     url_(url),
     cache_(cache),
     state_(state_t::free),
-    last_access_timestamp_(0u)
+    access_timestamp_(0u)
 {
     state_ = state_t::scheduled_for_loading;
 }
@@ -55,27 +55,23 @@ void osmview::TileCacheItem::load()
     }
     catch (SDL2pp::Exception &e)
     {
-        state_ = state_t::scheduled_for_downloading;
-        cache_->request_download(shared_from_this());
+        state_ = state_t::downloading;
+        cache_->download(url_, file_name_,
+                         std::bind(&TileCacheItem::download_callback,
+                                   shared_from_this(), std::placeholders::_1));
     }
 }
 
-void osmview::TileCacheItem::download()
+void osmview::TileCacheItem::download_callback(bool success)
 {
-    assert(state_ == state_t::scheduled_for_downloading);
-    state_ = state_t::downloading;
-    try
+    if (success)
     {
-        cache_->download(url_, file_name_);
-
         state_ = state_t::scheduled_for_loading;
-        cache_->request_load(shared_from_this());
+        initiate_load();
     }
-    catch (std::exception & e)
+    else
     {
         state_ = state_t::error;
-        std::cerr << "Error downloading from " << url_ << std::endl;
-        std::cerr << e.what() << std::endl;
     }
 }
 
@@ -94,4 +90,20 @@ SDL2pp::Optional<SDL2pp::Texture> &osmview::TileCacheItem::get_texture(
     }
 
     return texture_;
+}
+
+std::shared_ptr<osmview::TileCacheItem>
+osmview::TileCacheItem::create(osmview::TileCache *cache,
+                               const std::string &file_name,
+                               const std::string &url)
+{
+    auto item = std::shared_ptr<TileCacheItem>(
+                new TileCacheItem(cache, file_name, url));
+    item->initiate_load();
+    return item;
+}
+
+void osmview::TileCacheItem::initiate_load()
+{
+    cache_->schedule(std::bind(&TileCacheItem::load, shared_from_this()));
 }

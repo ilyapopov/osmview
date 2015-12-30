@@ -58,15 +58,16 @@ private:
     std::mutex mutex_;
     TileCache * cache_;
     std::atomic<state_t> state_;
-    size_t last_access_timestamp_;
-
-public:
+    size_t access_timestamp_;
 
     TileCacheItem(TileCache * cache,
                   const std::string & file_name, const std::string & url);
 
     void load();
-    void download();
+    void download_callback(bool);
+    void initiate_load();
+
+public:
 
     SDL2pp::Optional<SDL2pp::Texture> &get_texture(SDL2pp::Renderer &renderer);
 
@@ -77,13 +78,18 @@ public:
 
     std::size_t access_timestamp() const
     {
-        return last_access_timestamp_;
+        return access_timestamp_;
     }
 
-    void set_timestamp(size_t timestamp)
+    void set_access_timestamp(size_t timestamp)
     {
-        last_access_timestamp_ = timestamp;
+        access_timestamp_ = timestamp;
     }
+
+    static std::shared_ptr<TileCacheItem>
+    create(TileCache * cache, const std::string & file_name,
+           const std::string & url);
+
 };
 
 }

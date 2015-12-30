@@ -21,13 +21,15 @@
 #include "downloader.hpp"
 
 #include <cstdio>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 
 #include <boost/filesystem.hpp>
 #include <curl/curl.h>
 
-osmview::Downloader::Downloader()
+osmview::Downloader::Downloader(size_t nstreams) :
+    thread_pool_(nstreams)
 {
     if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK)
     {
@@ -75,5 +77,26 @@ void osmview::Downloader::download(const std::string &url, const std::string &fi
     }
 
     fs::rename(tmp_file_name, file_name);
+}
+
+void osmview::Downloader::enqueue(const std::string &url,
+                                   const std::string &file_name,
+                                   const std::function<void (bool)> &callback)
+{
+    thread_pool_.emplace([url, file_name, callback]{
+        try
+        {
+            download(url, file_name);
+        }
+        catch (std::exception & e)
+        {
+            std::cerr << "Error downloading from " << url << std::endl;
+            std::cerr << e.what() << std::endl;
+
+            callback(false);
+        }
+
+        callback(true);
+    });
 }
 
