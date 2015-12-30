@@ -146,7 +146,7 @@ osmview::TileCache::generate_text_tile(const std::string &text,
     SDL2pp::Surface surface(0, tile_size_, tile_size_, 32, 0u, 0u, 0u, 0u);
     surface.FillRect(SDL2pp::NullOpt, SDL_MapRGB(surface.Get()->format, 192, 192, 192));
 
-    auto text_surface = font.RenderText_Blended(text, {64, 64, 64, 0});
+    auto text_surface = font.RenderText_Blended(text, {128, 128, 128, 0});
     text_surface.Blit(SDL2pp::NullOpt, surface,
     {(surface.GetSize() - text_surface.GetSize())/ 2, text_surface.GetSize()});
 
