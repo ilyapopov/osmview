@@ -36,10 +36,11 @@ osmview::TileCache::TileCache(const std::string &tile_dir,
                               size_t max_size) :
     tile_dir_(tile_dir),
     url_base_(url_base),
-    fetcher_pool_(std::thread::hardware_concurrency()),
-    downloader_pool_(8),
+    thread_pool_(std::thread::hardware_concurrency()),
     renderer_(renderer),
-    max_size_(max_size)
+    max_size_(max_size),
+    tile_size_(256),
+    seq_(0)
 {
     generate_special_tiles();
 }
@@ -61,8 +62,7 @@ osmview::TileCacheItem &osmview::TileCache::get_item(key_type tile_id)
         std::string file_name = make_file_name(tile_id);
         std::string url = make_url(tile_id);
 
-        auto item = std::make_shared<TileCacheItem>(this, file_name, url);
-        request_load(item);
+        auto item = TileCacheItem::create(this, file_name, url);
 
         p = cache_.emplace(tile_id, item).first;
     }
@@ -70,17 +70,16 @@ osmview::TileCacheItem &osmview::TileCache::get_item(key_type tile_id)
     return *(p->second);
 }
 
-void osmview::TileCache::prefetch(key_type tile_id, size_t timestamp)
+void osmview::TileCache::prefetch(key_type tile_id)
 {
     auto & item = get_item(tile_id);
-    item.set_timestamp(timestamp);
+    item.set_access_timestamp(seq_++);
 }
 
-SDL2pp::Texture & osmview::TileCache::get_texture(key_type tile_id,
-                                                  size_t timestamp)
+SDL2pp::Texture & osmview::TileCache::get_texture(key_type tile_id)
 {
     auto & item = get_item(tile_id);
-    item.set_timestamp(timestamp);
+    item.set_access_timestamp(seq_++);
 
     auto & texture = item.get_texture(renderer_);
 
@@ -140,24 +139,16 @@ void osmview::TileCache::generate_special_tiles()
                            generate_text_tile("Scheduled", font));
 }
 
-SDL2pp::Texture osmview::TileCache::generate_text_tile(const std::string &text, SDL2pp::Font &font)
+SDL2pp::Texture
+osmview::TileCache::generate_text_tile(const std::string &text,
+                                       SDL2pp::Font &font)
 {
-    SDL2pp::Surface tile(0, 256, 256, 32, 0, 0, 0, 0);
-    tile.FillRect(SDL2pp::NullOpt, 0x00000000);
+    SDL2pp::Surface tile(0, tile_size_, tile_size_, 32, 0u, 0u, 0u, 0u);
+    tile.FillRect(SDL2pp::NullOpt, 0u);
 
     auto text_surface = font.RenderText_Blended(text, {128, 128, 128, 0});
     text_surface.Blit(SDL2pp::NullOpt, tile,
     {(tile.GetSize() - text_surface.GetSize())/ 2, text_surface.GetSize()});
 
     return SDL2pp::Texture(renderer_, tile);
-}
-
-void osmview::TileCache::request_load(std::shared_ptr<TileCacheItem> item)
-{
-    fetcher_pool_.emplace([item](){if (item.use_count() > 1) item->load();});
-}
-
-void osmview::TileCache::request_download(std::shared_ptr<TileCacheItem> item)
-{
-    downloader_pool_.emplace([item](){if (item.use_count() > 1) item->download();});
 }

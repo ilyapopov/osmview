@@ -33,7 +33,7 @@
 #include <SDL2pp/Texture.hh>
 
 #include "coord.hpp"
-#include "tileid.hpp"
+#include "tile_id.hpp"
 
 namespace osmview
 {
@@ -69,8 +69,6 @@ class Mapview
     SDL2pp::Renderer &renderer_;
     SDL2pp::Point output_size_;
 
-    size_t frame_num_;
-
     SDL2pp::Font font_;
     SDL2pp::Optional<SDL2pp::Texture> credits_texture_;
 
@@ -91,7 +89,6 @@ public:
     void update(double dt);
     
     int zoom(int step);
-    int zoom(int step, int x, int y);
     
     void render();
 };

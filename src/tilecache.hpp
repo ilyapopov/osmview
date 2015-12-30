@@ -33,7 +33,7 @@
 
 #include "downloader.hpp"
 #include "worker_pool.hpp"
-#include "tileid.hpp"
+#include "tile_id.hpp"
 
 namespace osmview
 {
@@ -52,9 +52,7 @@ class TileCache
     map_t cache_;
 
     Downloader downloader_;
-
-    WorkerPool<std::function<void()> > fetcher_pool_;
-    WorkerPool<std::function<void()> > downloader_pool_;
+    WorkerPool<std::function<void()> > thread_pool_;
 
     SDL2pp::Renderer &renderer_;
 
@@ -63,11 +61,16 @@ class TileCache
     std::unordered_map<int, SDL2pp::Optional<SDL2pp::Texture>>
         special_tiles_;
 
+    size_t tile_size_;
+    size_t seq_;
+
     std::string make_file_name(key_type tile_id) const;
     std::string make_url(key_type tile_id) const;
     void generate_special_tiles();
-    SDL2pp::Texture generate_text_tile(const std::string &text, SDL2pp::Font & font);
+    SDL2pp::Texture generate_text_tile(const std::string &text,
+                                       SDL2pp::Font &font);
     void gc();
+    TileCacheItem & get_item(key_type tile_id);
 
 public:
     TileCache(const std::string & tile_dir, const std::string & url_base,
@@ -79,16 +82,22 @@ public:
         return cache_.size();
     }
 
-    TileCacheItem & get_item(key_type tile_id);
-    void prefetch(key_type tile_id, size_t timestamp);
-    SDL2pp::Texture & get_texture(key_type tile_id, size_t timestamp);
+    void prefetch(key_type tile_id);
+    SDL2pp::Texture & get_texture(key_type tile_id);
     
-    void request_load(std::shared_ptr<TileCacheItem>);
-    void request_download(std::shared_ptr<TileCacheItem>);
+    // Following member functions are thread-safe
 
-    void download(const std::string & url, const std::string & file_name)
+    template <typename Callable>
+    void schedule(Callable && func)
     {
-        downloader_.download(url, file_name);
+        thread_pool_.emplace(func);
+    }
+
+    template <typename Callable>
+    void download(const std::string & url, const std::string & file_name,
+                  Callable && callback)
+    {
+        downloader_.enqueue(url, file_name, callback);
     }
 };
 

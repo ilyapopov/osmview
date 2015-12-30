@@ -1,5 +1,5 @@
-#ifndef OSMVIEW_TILEID_HPP
-#define OSMVIEW_TILEID_HPP
+#ifndef OSMVIEW_TILE_ID_HPP
+#define OSMVIEW_TILE_ID_HPP
 
 #include <cstdint>
 #include <functional>
@@ -24,7 +24,7 @@ public:
     constexpr int x() const {return (int)((id_ >> 22) & coord_mask_);}
     constexpr int y() const {return (int)(id_ & coord_mask_);}
 
-    constexpr bool operator==(TileId other)
+    constexpr bool operator==(TileId other) const
     {
         return id_ == other.id_;
     }
@@ -59,5 +59,5 @@ struct hash<osmview::TileId>
 } // namespace
 
 
-#endif // OSMVIEW_TILEID_HPP
+#endif // OSMVIEW_TILE_ID_HPP
 

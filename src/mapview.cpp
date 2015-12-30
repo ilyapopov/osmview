@@ -69,7 +69,6 @@ osmview::Mapview::Mapview(SDL2pp::Renderer &renderer)
     vx_(0.0), vy_(0.0), fx_(0.0), fy_(0.0),
     target_level_(1), level_(1.0), scale_(1.0),
     renderer_(renderer), output_size_(renderer_.GetOutputSize()),
-    frame_num_(0),
     font_("data/DejaVuSans.ttf", 12)
 {
     std::string server_name("tile.openstreetmap.org");
@@ -113,7 +112,7 @@ int osmview::Mapview::zoom(int step)
 
     for (const auto & p: visible_tiles(target_level_, VisitOrder::from_center))
     {
-        cache_->prefetch(p.first, frame_num_);
+        cache_->prefetch(p.first);
     }
 
     return target_level_;
@@ -121,12 +120,11 @@ int osmview::Mapview::zoom(int step)
 
 void osmview::Mapview::render()
 {
-    ++frame_num_;
     int tile_level = std::round(level_);
 
     for (const auto & p: visible_tiles(tile_level, VisitOrder::from_center))
     {
-        auto & texture = cache_->get_texture(p.first, frame_num_);
+        auto & texture = cache_->get_texture(p.first);
         renderer_.Copy(texture, SDL2pp::NullOpt, p.second);
     }
 

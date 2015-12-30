@@ -9,6 +9,7 @@ TODO
 - Display current coordinates
 - Grid?
 - Limit the time spent on one frame (skip creation of textures?)
+- Configurable map layers/sources
 
 Done
 ====

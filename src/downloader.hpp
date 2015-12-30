@@ -21,18 +21,25 @@
 #ifndef DOWNLOADER_HPP
 #define DOWNLOADER_HPP
 
+#include <functional>
 #include <string>
+
+#include "worker_pool.hpp"
 
 namespace osmview
 {
 
 class Downloader
 {
+    WorkerPool<std::function<void()>> thread_pool_;
+    static void download(const std::string &url, const std::string &file_name);
+
 public:
-    Downloader();
+    Downloader(size_t nstreams = 8);
     ~Downloader();
 
-    void download(const std::string &url, const std::string &file_name);
+    void enqueue(const std::string &url, const std::string &file_name,
+                  const std::function<void (bool)> &callback);
 };
 
 } // namespace
