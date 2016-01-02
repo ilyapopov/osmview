@@ -32,16 +32,13 @@ osmview::TileCacheItem::TileCacheItem(TileCache * cache,
     file_name_(file_name),
     url_(url),
     cache_(cache),
-    state_(state_t::free),
+    state_(State::free),
     access_timestamp_(0u)
-{
-    state_ = state_t::scheduled_for_loading;
-}
+{}
 
 void osmview::TileCacheItem::load()
 {
-    assert(state_ == state_t::scheduled_for_loading);
-    state_ = state_t::loading;
+    state_ = State::loading;
     try
     {
         SDL2pp::Surface s(file_name_);
@@ -51,11 +48,11 @@ void osmview::TileCacheItem::load()
             surface_ = std::move(s);
         }
 
-        state_ = state_t::surface_ready;
+        state_ = State::surface_ready;
     }
     catch (SDL2pp::Exception &e)
     {
-        state_ = state_t::downloading;
+        state_ = State::downloading;
         cache_->download(url_, file_name_,
                          std::bind(&TileCacheItem::download_callback,
                                    shared_from_this(), std::placeholders::_1));
@@ -66,12 +63,11 @@ void osmview::TileCacheItem::download_callback(bool success)
 {
     if (success)
     {
-        state_ = state_t::scheduled_for_loading;
         initiate_load();
     }
     else
     {
-        state_ = state_t::error;
+        state_ = State::error;
     }
 }
 
@@ -105,5 +101,6 @@ osmview::TileCacheItem::create(osmview::TileCache *cache,
 
 void osmview::TileCacheItem::initiate_load()
 {
+    state_ = State::scheduled_for_loading;
     cache_->schedule(std::bind(&TileCacheItem::load, shared_from_this()));
 }

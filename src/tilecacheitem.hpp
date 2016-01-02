@@ -39,7 +39,7 @@ class TileCache;
 class TileCacheItem : public std::enable_shared_from_this<TileCacheItem>
 {
 public:
-    enum class state_t
+    enum class State
     {
         free = 0,
         scheduled_for_loading = 1,
@@ -57,7 +57,7 @@ private:
     SDL2pp::Optional<SDL2pp::Texture> texture_;
     std::mutex mutex_;
     TileCache * cache_;
-    std::atomic<state_t> state_;
+    std::atomic<State> state_;
     size_t access_timestamp_;
 
     TileCacheItem(TileCache * cache,
@@ -71,7 +71,7 @@ public:
 
     SDL2pp::Optional<SDL2pp::Texture> &get_texture(SDL2pp::Renderer &renderer);
 
-    state_t state() const
+    State state() const
     {
         return state_;
     }
