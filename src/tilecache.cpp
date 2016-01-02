@@ -36,7 +36,6 @@ osmview::TileCache::TileCache(const std::string &tile_dir,
                               size_t max_size) :
     tile_dir_(tile_dir),
     url_base_(url_base),
-    thread_pool_(std::thread::hardware_concurrency()),
     renderer_(renderer),
     max_size_(max_size),
     tile_size_(256),
@@ -127,15 +126,15 @@ std::string osmview::TileCache::make_url(key_type tile_id) const
 void osmview::TileCache::generate_special_tiles()
 {
     SDL2pp::Font font("data/DejaVuSans.ttf", 20);
-    special_tiles_.emplace((int)TileCacheItem::state_t::loading,
+    special_tiles_.emplace((int)TileCacheItem::State::loading,
                            generate_text_tile("Loading...", font));
-    special_tiles_.emplace((int)TileCacheItem::state_t::downloading,
+    special_tiles_.emplace((int)TileCacheItem::State::downloading,
                            generate_text_tile("Downoading...", font));
-    special_tiles_.emplace((int)TileCacheItem::state_t::error,
+    special_tiles_.emplace((int)TileCacheItem::State::error,
                            generate_text_tile("Error", font));
-    special_tiles_.emplace((int)TileCacheItem::state_t::scheduled_for_loading,
+    special_tiles_.emplace((int)TileCacheItem::State::scheduled_for_loading,
                            generate_text_tile("Scheduled", font));
-    special_tiles_.emplace((int)TileCacheItem::state_t::scheduled_for_downloading,
+    special_tiles_.emplace((int)TileCacheItem::State::scheduled_for_downloading,
                            generate_text_tile("Scheduled", font));
 }
 
