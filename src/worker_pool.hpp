@@ -28,6 +28,9 @@
 #include <utility>
 #include <vector>
 
+namespace osmview
+{
+
 template <typename Task>
 class WorkerPool
 {
@@ -44,7 +47,7 @@ public:
     void stop();
 
 private:
-    enum class command
+    enum class Command
     {
         none,
         stop,
@@ -56,14 +59,14 @@ private:
     std::mutex command_mutex_;
     std::condition_variable command_cond_var_;
     std::queue<Task> task_queue_;
-    command command_;
+    Command command_;
 
     void worker_func();
 };
 
 template <typename Task>
 WorkerPool<Task>::WorkerPool(size_t nthreads)
-    : command_(command::none)
+    : command_(Command::none)
 {
     threads_.reserve(nthreads);
     for (size_t i = 0; i < nthreads; ++i)
@@ -90,12 +93,12 @@ void WorkerPool<Task>::worker_func()
     {
         std::unique_lock<std::mutex> lock(command_mutex_);
         command_cond_var_.wait(lock, [&](){
-            return !task_queue_.empty() || command_ != command::none;
+            return !task_queue_.empty() || command_ != Command::none;
         });
 
-        if (command_ == command::stop)
+        if (command_ == Command::stop)
             break;
-        if (command_ == command::finish && task_queue_.empty())
+        if (command_ == Command::finish && task_queue_.empty())
             break;
 
         Task task(std::move(task_queue_.front()));
@@ -134,9 +137,11 @@ void WorkerPool<Task>::stop()
 {
     {
         std::lock_guard<std::mutex> lock(command_mutex_);
-        command_ = command::stop;
+        command_ = Command::stop;
     }
     command_cond_var_.notify_all();
 }
+
+} // namespace
 
 #endif
