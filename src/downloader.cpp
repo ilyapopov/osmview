@@ -87,16 +87,15 @@ void osmview::Downloader::enqueue(const std::string &url,
         try
         {
             download(url, file_name);
+            callback(true);
         }
         catch (std::exception & e)
         {
-            std::cerr << "Error downloading from " << url << std::endl;
-            std::cerr << e.what() << std::endl;
+            std::cerr << "Error downloading " << url << " : "
+                      << e.what() << std::endl;
 
             callback(false);
         }
-
-        callback(true);
     });
 }
 
