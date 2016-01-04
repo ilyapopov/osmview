@@ -35,7 +35,7 @@ template <typename Task>
 class WorkerPool
 {
 public:
-    explicit WorkerPool(size_t nthreads = std::thread::hardware_concurrency());
+    explicit WorkerPool(size_t nthreads = std::max(1u, std::thread::hardware_concurrency()));
     ~WorkerPool();
     
     template<typename... ArgTypes>
