@@ -19,5 +19,6 @@ target_link_libraries(osmview PRIVATE ${CMAKE_THREAD_LIBS_INIT}
 target_include_directories(osmview PRIVATE ${SDL2PP_INCLUDE_DIRS}
     ${CURL_INCLUDEDIRS} ${Boost_INCLUDE_DIRS})
 target_compile_features(osmview PRIVATE cxx_auto_type cxx_range_for cxx_nullptr
-    cxx_noexcept)
+    cxx_noexcept cxx_constexpr cxx_lambdas cxx_right_angle_brackets
+    cxx_strong_enums cxx_uniform_initialization)
 target_compile_options(osmview PRIVATE -Wall -Wextra)
