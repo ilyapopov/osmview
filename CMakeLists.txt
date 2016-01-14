@@ -1,14 +1,23 @@
 project(osmview C CXX)
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
-	message(FATAL_ERROR "In-source builds are not permitted. Make a separate folder for building:\nmkdir build; cd build; cmake ..\nBefore that, remove the files already created:\nrm -rf CMakeCache.txt CMakeFiles")
-endif(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
+set(SDL2PP_WITH_IMAGE ON) # if you need SDL_image support
+#set(SDL2PP_WITH_MIXER ON) # if you need SDL_mixer support
+set(SDL2PP_WITH_TTF ON) # if you need SDL_ttf support
+add_subdirectory(deps/libSDL2pp)
 
-SET(SDL2PP_WITH_IMAGE ON) # if you need SDL_image support
-#SET(SDL2PP_WITH_MIXER ON) # if you need SDL_mixer support
-SET(SDL2PP_WITH_TTF ON) # if you need SDL_ttf support
-ADD_SUBDIRECTORY(deps/libSDL2pp)
+find_package(Threads REQUIRED)
+find_package(CURL REQUIRED)
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 
-add_subdirectory(src)
+add_executable(osmview
+               src/main.cpp src/mapview.cpp src/coord.cpp src/tilecache.cpp
+               src/tilecacheitem.cpp src/downloader.cpp)
 
+target_link_libraries(osmview PRIVATE ${CMAKE_THREAD_LIBS_INIT}
+    ${SDL2PP_LIBRARIES} ${CURL_LIBRARIES} ${Boost_LIBRARIES})
+target_include_directories(osmview PRIVATE ${SDL2PP_INCLUDE_DIRS}
+    ${CURL_INCLUDEDIRS} ${Boost_INCLUDE_DIRS})
+target_compile_features(osmview PRIVATE cxx_auto_type cxx_range_for cxx_nullptr
+    cxx_noexcept)
+target_compile_options(osmview PRIVATE -Wall -Wextra)
