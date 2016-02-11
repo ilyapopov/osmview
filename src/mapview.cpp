@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <iomanip>
+#include <sstream>
 
 #include <SDL2pp/Rect.hh>
 #include <SDL2pp/Renderer.hh>
@@ -69,7 +71,8 @@ osmview::Mapview::Mapview(SDL2pp::Renderer &renderer)
     vx_(0.0), vy_(0.0), fx_(0.0), fy_(0.0),
     target_level_(1), level_(1.0), scale_(1.0),
     renderer_(renderer), output_size_(renderer_.GetOutputSize()),
-    font_("data/DejaVuSans.ttf", 12)
+    font_("data/DejaVuSans.ttf", 12),
+    show_hud_(false)
 {
     std::string server_name("tile.openstreetmap.org");
 
@@ -131,6 +134,9 @@ void osmview::Mapview::render()
     SDL2pp::Rect rect(output_size_ - credits_texture_->GetSize(),
                       credits_texture_->GetSize());
     renderer_.Copy(*credits_texture_, SDL2pp::NullOpt, rect);
+
+    if (show_hud_)
+        render_hud();
 }
 
 void osmview::Mapview::update(double dt)
@@ -151,6 +157,9 @@ void osmview::Mapview::update(double dt)
         level_ = target_level_;
     level_ = clamp(level_, 0.0, (double)max_level_);
     scale_ = std::pow(2.0, level_);
+
+    current_fps_ = 1.0 / dt;
+    smoothed_fps_ += (current_fps_ - smoothed_fps_) * beta;
 }
 
 namespace
@@ -218,4 +227,40 @@ osmview::Mapview::visible_tiles(int tile_level,
     }
 
     return tiles;
+}
+
+void osmview::Mapview::render_hud()
+{
+    SDL_Color color{128, 128, 128, 0};
+    int line = 0;
+    int linespacing = font_.GetLineSkip() * 1.5;
+    {
+        // coordinates
+        std::ostringstream oss;
+        oss << mapy2lat(mapy_) <<", " << mapx2lon(mapx_);
+        auto coord_texture = make_text_texture(oss.str(), color);
+        renderer_.Copy(coord_texture, SDL2pp::NullOpt, {0, (line++)*linespacing});
+    }
+    {
+        // cache size
+        std::ostringstream oss;
+        oss << "Cache size: " << cache_->size();
+        auto coord_texture = make_text_texture(oss.str(), color);
+        renderer_.Copy(coord_texture, SDL2pp::NullOpt, {0, (line++)*linespacing});
+    }
+    {
+        // FPS
+        std::ostringstream oss;
+        oss << "FPS: " << std::setprecision(3) << smoothed_fps_;
+        auto coord_texture = make_text_texture(oss.str(), color);
+        renderer_.Copy(coord_texture, SDL2pp::NullOpt, {0, (line++)*linespacing});
+    }
+}
+
+SDL2pp::Texture
+osmview::Mapview::make_text_texture(const std::string &text,
+                                    const SDL_Color &color)
+{
+    auto surface = font_.RenderUTF8_Blended(text, color);
+    return {renderer_, surface};
 }

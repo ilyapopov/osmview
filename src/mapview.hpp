@@ -72,11 +72,18 @@ class Mapview
     SDL2pp::Font font_;
     SDL2pp::Optional<SDL2pp::Texture> credits_texture_;
 
+    bool show_hud_;
+
+    double current_fps_;
+    double smoothed_fps_;
+
     SDL2pp::Point to_screen(double x, double y);
     std::pair<double, double> from_screen(const SDL2pp::Point &point);
 
     std::vector<std::pair<TileId, SDL2pp::Rect>>
     visible_tiles(int tile_level, VisitOrder order = VisitOrder::from_center);
+    void render_hud();
+    SDL2pp::Texture make_text_texture(const std::string & text, const SDL_Color & color);
 
 public:
 
@@ -89,6 +96,11 @@ public:
     void update(double dt);
     
     int zoom(int step);
+
+    void toggle_hud()
+    {
+        show_hud_ = !show_hud_;
+    }
     
     void render();
 };

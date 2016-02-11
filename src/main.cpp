@@ -84,6 +84,8 @@ int main(int /*argc*/, char ** /*argv*/)
                         break;
                     case SDL_SCANCODE_ESCAPE:
                         return 0;
+                    case SDL_SCANCODE_TAB:
+                        mv.toggle_hud();
                     default:
                         break;
                     }
@@ -156,7 +158,7 @@ int main(int /*argc*/, char ** /*argv*/)
     }
     catch (std::exception & e)
     {
-        std::cerr << "Fatal Error: " << e.what() << std::endl;
+        std::cerr << "Fatal error: " << e.what() << std::endl;
         return 1;
     }
     catch (...)
