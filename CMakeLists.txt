@@ -15,10 +15,10 @@ add_executable(osmview
                src/tilecacheitem.cpp src/downloader.cpp)
 
 target_link_libraries(osmview PRIVATE ${CMAKE_THREAD_LIBS_INIT}
-    ${SDL2PP_LIBRARIES} ${CURL_LIBRARIES} ${Boost_LIBRARIES})
-target_include_directories(osmview PRIVATE ${SDL2PP_INCLUDE_DIRS}
+    ${SDL2PP_LIBRARIES} ${SDLMAIN_LIBRARY} ${CURL_LIBRARIES} ${Boost_LIBRARIES})
+target_include_directories(osmview SYSTEM PRIVATE ${SDL2PP_INCLUDE_DIRS}
     ${CURL_INCLUDEDIRS} ${Boost_INCLUDE_DIRS})
 target_compile_features(osmview PRIVATE cxx_auto_type cxx_range_for cxx_nullptr
     cxx_noexcept cxx_constexpr cxx_lambdas cxx_right_angle_brackets
     cxx_strong_enums cxx_uniform_initialization)
-target_compile_options(osmview PRIVATE -Wall -Wextra)
+target_compile_options(osmview PRIVATE -Wall -Wextra -Wpedantic)
