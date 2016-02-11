@@ -30,7 +30,7 @@ double mapx2lon(double x);
 double mapy2lat(double y);
 
 template <typename T>
-T clamp(const T &x, const T &a, const T &b)
+inline T clamp(const T &x, const T &a, const T &b)
 {
     if (x < a) return a;
     if (b < x) return b;
@@ -38,7 +38,7 @@ T clamp(const T &x, const T &a, const T &b)
 }
 
 template <typename T>
-T wrap(const T &x, const T &a, const T &b)
+inline T wrap(const T &x, const T &a, const T &b)
 {
     T y = x;
     while (y < a)
