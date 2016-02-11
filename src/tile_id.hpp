@@ -24,20 +24,25 @@ public:
     constexpr int x() const {return (int)((id_ >> 22) & coord_mask_);}
     constexpr int y() const {return (int)(id_ & coord_mask_);}
 
-    constexpr bool operator==(TileId other) const
+    friend constexpr bool operator==(TileId lhs, TileId rhs)
     {
-        return id_ == other.id_;
+        return lhs.id_ == rhs.id_;
+    }
+
+    friend constexpr bool operator!=(TileId lhs, TileId rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    friend constexpr bool operator<(TileId lhs, TileId rhs)
+    {
+        return lhs.id_ < rhs.id_;
     }
 };
 
 inline std::ostream & operator<<(std::ostream & os, TileId id)
 {
     return os << id.level() << '/' << id.x() << '/' << id.y();
-}
-
-inline constexpr bool operator<(TileId lhs, TileId rhs)
-{
-    return lhs.id() < rhs.id();
 }
 
 } // namespace
@@ -50,6 +55,8 @@ namespace std
 template<>
 struct hash<osmview::TileId>
 {
+    using argument_type = osmview::TileId;
+    using result_type = std::size_t;
     size_t operator()(osmview::TileId id) const
     {
         return hash<uint64_t>()(id.id());

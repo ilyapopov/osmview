@@ -22,11 +22,13 @@
 
 #include <algorithm>
 #include <sstream>
-#include <stdexcept>
 #include <utility>
 #include <vector>
 
+#include <SDL2/SDL.h>
 #include <SDL2pp/Surface.hh>
+#include <SDL2pp/Font.hh>                      // for Font
+#include <SDL2pp/Point.hh>                     // for Point
 
 #include "tilecacheitem.hpp"
 

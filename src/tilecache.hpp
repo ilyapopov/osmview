@@ -21,19 +21,21 @@
 #ifndef TILECACHE_HPP_INCLUDED
 #define TILECACHE_HPP_INCLUDED
 
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 
-#include <SDL2pp/Font.hh>
 #include <SDL2pp/Optional.hh>
-#include <SDL2pp/Renderer.hh>
 #include <SDL2pp/Texture.hh>
 
 #include "downloader.hpp"
 #include "worker_pool.hpp"
 #include "tile_id.hpp"
+
+namespace SDL2pp { class Font; }
+namespace SDL2pp { class Renderer; }
 
 namespace osmview
 {

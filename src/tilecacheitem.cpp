@@ -20,6 +20,7 @@
 
 #include "tilecacheitem.hpp"
 
+#include <algorithm>
 #include <functional>
 
 #include <SDL2pp/Exception.hh>

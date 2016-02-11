@@ -20,10 +20,13 @@
 
 #include "downloader.hpp"
 
+#include <cerrno>
 #include <cstdio>
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <system_error>
 
 #include <boost/filesystem.hpp>
 #include <curl/curl.h>

@@ -21,6 +21,7 @@
 #ifndef DOWNLOADER_HPP
 #define DOWNLOADER_HPP
 
+#include <cstddef>
 #include <functional>
 #include <string>
 

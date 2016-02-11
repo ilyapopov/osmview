@@ -25,10 +25,14 @@
 #include <cstdlib>
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
 
-#include <SDL2pp/Rect.hh>
-#include <SDL2pp/Renderer.hh>
+#include <SDL2pp/Rect.hh>      // for Rect
+#include <SDL2pp/Renderer.hh>  // for Renderer
+#include <SDL2pp/Surface.hh>   // for Surface
 
+#include "coord.hpp"
+#include "tile_id.hpp"
 #include "tilecache.hpp"
 
 const double osmview::Mapview::v0_ = 2.0;
