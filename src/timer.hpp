@@ -22,6 +22,9 @@
 #define TIMER_HPP_INCLUDED
 
 #include <chrono>
+#include <string>
+#include <iostream>
+#include <utility>
 
 namespace osmview
 {

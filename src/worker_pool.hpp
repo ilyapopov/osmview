@@ -21,7 +21,9 @@
 #ifndef WORKER_POOL_HPP_INCLUDED
 #define WORKER_POOL_HPP_INCLUDED
 
+#include <algorithm>
 #include <condition_variable>
+#include <cstddef>
 #include <mutex>
 #include <queue>
 #include <thread>

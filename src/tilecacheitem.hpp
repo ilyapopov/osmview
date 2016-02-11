@@ -22,14 +22,19 @@
 #define TILECACHEITEM_HPP_INCLUDED
 
 #include <atomic>
+#include <cstddef>
 #include <memory>
 #include <mutex>
 #include <string>
 
 #include <SDL2pp/Optional.hh>
-#include <SDL2pp/Renderer.hh>
 #include <SDL2pp/Surface.hh>
 #include <SDL2pp/Texture.hh>
+
+namespace SDL2pp
+{
+    class Renderer;
+}
 
 namespace osmview
 {

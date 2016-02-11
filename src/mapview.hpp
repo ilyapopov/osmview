@@ -26,18 +26,22 @@
 #include <utility>
 #include <vector>
 
+#include <SDL2/SDL.h>
 #include <SDL2pp/Font.hh>
 #include <SDL2pp/Optional.hh>
 #include <SDL2pp/Point.hh>
-#include <SDL2pp/Renderer.hh>
 #include <SDL2pp/Texture.hh>
 
-#include "coord.hpp"
-#include "tile_id.hpp"
+namespace SDL2pp
+{
+    class Rect;
+    class Renderer;
+}
 
 namespace osmview
 {
 
+class TileId;
 class TileCache;
 
 class Mapview
