@@ -2,7 +2,7 @@ project(osmview C CXX)
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 set(SDL2PP_WITH_IMAGE ON) # if you need SDL_image support
-#set(SDL2PP_WITH_MIXER ON) # if you need SDL_mixer support
+set(SDL2PP_WITH_MIXER OFF) # if you need SDL_mixer support
 set(SDL2PP_WITH_TTF ON) # if you need SDL_ttf support
 add_subdirectory(deps/libSDL2pp)
 
