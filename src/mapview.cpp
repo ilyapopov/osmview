@@ -55,7 +55,7 @@ std::string get_user_cache_dir()
     throw std::runtime_error("Cannot figure out cache directory location");
 }
 
-} // namespace
+} // namespace anonymous
 
 SDL2pp::Point osmview::Mapview::to_screen(double x, double y)
 {
@@ -64,9 +64,9 @@ SDL2pp::Point osmview::Mapview::to_screen(double x, double y)
     return SDL2pp::Point(x1, y1) + output_size_ / 2;
 }
 
-std::pair<double, double> osmview::Mapview::from_screen(const SDL2pp::Point &p)
+std::pair<double, double> osmview::Mapview::from_screen(const SDL2pp::Point &point)
 {
-    SDL2pp::Point p1 = p - output_size_ / 2;
+    SDL2pp::Point p1 = point - output_size_ / 2;
     return {mapx_ + p1.x / scale_, mapy_ + p1.y / scale_};
 }
 
@@ -90,8 +90,7 @@ osmview::Mapview::Mapview(SDL2pp::Renderer &renderer)
     credits_texture_.emplace(renderer_, credits_surface);
 }
 
-osmview::Mapview::~Mapview()
-{}
+osmview::Mapview::~Mapview() = default;
 
 void osmview::Mapview::center_on_latlon(double lat, double lon)
 {

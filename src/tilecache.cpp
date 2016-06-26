@@ -46,8 +46,7 @@ osmview::TileCache::TileCache(const std::string &tile_dir,
     generate_special_tiles();
 }
 
-osmview::TileCache::~TileCache()
-{}
+osmview::TileCache::~TileCache() = default;
 
 osmview::TileCacheItem &osmview::TileCache::get_item(key_type tile_id)
 {
@@ -108,8 +107,6 @@ void osmview::TileCache::gc()
         cache_.erase(i->second);
     }
 }
-
-
 
 std::string osmview::TileCache::make_file_name(key_type tile_id) const
 {
