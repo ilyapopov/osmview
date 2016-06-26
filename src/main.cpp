@@ -21,12 +21,11 @@
 #include <exception>
 #include <iostream>
 
+#include <SDL2/SDL.h> // for constant defines
 #include <SDL2pp/SDL.hh>
 #include <SDL2pp/SDLTTF.hh>
 #include <SDL2pp/Window.hh>
 #include <SDL2pp/Renderer.hh>
-
-#include <SDL2/SDL.h> // for constant defines
 
 #include "mapview.hpp"
 #include "timer.hpp"

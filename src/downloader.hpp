@@ -40,7 +40,7 @@ public:
     ~Downloader();
 
     void enqueue(const std::string &url, const std::string &file_name,
-                  const std::function<void (bool)> &callback);
+                 const std::function<void (bool)> &callback);
 };
 
 } // namespace

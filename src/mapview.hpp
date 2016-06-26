@@ -93,7 +93,7 @@ public:
 
     explicit Mapview(SDL2pp::Renderer &renderer);
     ~Mapview();
-    
+
     void center_on_latlon(double lat, double lon);
     void move(double move_x, double move_y);
     void move_pix_hard(double dx, double dy);

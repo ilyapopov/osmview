@@ -76,7 +76,7 @@ class TileCache
 
 public:
     TileCache(const std::string & tile_dir, const std::string & url_base,
-              SDL2pp::Renderer &renderer, size_t max_size_ = 256);
+              SDL2pp::Renderer &renderer, size_t max_size = 256);
     ~TileCache();
 
     size_t size() const
