@@ -78,6 +78,8 @@ void osmview::TileCache::prefetch(key_type tile_id)
 
 SDL2pp::Texture & osmview::TileCache::get_texture(key_type tile_id)
 {
+    downloader_.perform();
+
     auto & item = get_item(tile_id);
     item.set_access_timestamp(seq_++);
 

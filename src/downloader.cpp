@@ -22,83 +22,125 @@
 
 #include <cerrno>
 #include <cstdio>
-#include <exception>
 #include <iostream>
-#include <memory>
 #include <stdexcept>
 #include <system_error>
 
 #include <boost/filesystem.hpp>
-#include <curl/curl.h>
 
-osmview::Downloader::Downloader(size_t nstreams) :
-    thread_pool_(nstreams)
+osmview::Downloader::Downloader(size_t nstreams) : unused_(nstreams)
 {
-    if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK)
-    {
-        throw std::runtime_error("Cannot initialize libCURL");
-    }
 }
 
 osmview::Downloader::~Downloader()
 {
-    curl_global_cleanup();
-}
-
-void osmview::Downloader::download(const std::string &url, const std::string &file_name)
-{
-    namespace fs = boost::filesystem;
-
-    fs::create_directories(fs::path(file_name).parent_path());
-
-    std::string tmp_file_name = file_name + ".tmp";
-
+    for (auto &transfer : active_)
     {
-        std::unique_ptr<FILE, int (*)(FILE*)>
-                file(std::fopen(tmp_file_name.c_str(), "wb"), std::fclose);
-        if (!file)
-        {
-            throw std::system_error(errno, std::system_category());
-        }
-
-        std::unique_ptr<CURL, void (*)(CURL*)>
-                curl(curl_easy_init(), curl_easy_cleanup);
-        if (!curl)
-        {
-            throw std::runtime_error("Cannot initialize CURL easy handle");
-        }
-
-        char errorrbuf[CURL_ERROR_SIZE];
-        curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, errorrbuf);
-        curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, file.get());
-        curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT, 10l);
-        if (curl_easy_perform(curl.get()) != CURLE_OK)
-        {
-            throw std::runtime_error(errorrbuf);
-        }
+        curl_multi_.remove(transfer.easy);
     }
-
-    fs::rename(tmp_file_name, file_name);
 }
 
 void osmview::Downloader::enqueue(const std::string &url,
-                                   const std::string &file_name,
-                                   const std::function<void (bool)> &callback)
+                                  const std::string &file_name,
+                                  const std::function<void(bool)> &callback)
 {
-    thread_pool_.emplace([url, file_name, callback]{
-        try
-        {
-            download(url, file_name);
-            callback(true);
-        }
-        catch (std::exception & e)
-        {
-            std::cerr << "Error downloading " << url << " : "
-                      << e.what() << std::endl;
-
-            callback(false);
-        }
-    });
+    std::unique_lock<std::mutex> lock(queue_mutex_);
+    queue_.push({url, file_name, callback});
 }
 
+void osmview::Downloader::perform()
+{
+    curl_multi_.perform();
+
+    CURLMsg *message;
+    while ((message = curl_multi_.info_read()) != nullptr)
+    {
+        if (message->msg != CURLMSG_DONE)
+            continue;
+
+        CURLcode result = message->data.result;
+
+        // find the easy object corresponding to the finished transfer
+        auto found =
+            std::find_if(active_.begin(), active_.end(), [&](Transfer &item) {
+                return item.easy.handle() == message->easy_handle;
+            });
+        // and remove it from the active transfers
+        auto item = std::move(*found);
+        active_.erase(found);
+        curl_multi_.remove(item.easy);
+
+        // process the finished transfer
+        item.finalize(result);
+
+        // put the transfer into unused pool
+        unused_.push_back(std::move(item));
+    }
+
+    // start new transfers if any
+    start_new();
+}
+
+void osmview::Downloader::start_new()
+{
+    std::lock_guard<std::mutex> lock(queue_mutex_);
+    while (!queue_.empty() && !unused_.empty())
+    {
+        // take one unused easy
+        auto item = std::move(unused_.back());
+        unused_.pop_back();
+        // setup new transfer
+        item.setup(std::move(queue_.front()));
+        queue_.pop();
+        // submit it
+        curl_multi_.add(item.easy);
+        active_.push_back(std::move(item));
+    }
+}
+
+void osmview::Downloader::Transfer::setup(osmview::Downloader::Task &&q)
+{
+    namespace fs = boost::filesystem;
+
+    task = std::move(q);
+
+    fs::create_directories(fs::path(task.file_name).parent_path());
+    tmp_file_name = task.file_name + ".tmp";
+
+    file.reset(std::fopen(tmp_file_name.c_str(), "wb"));
+
+    if (!file)
+    {
+        throw std::system_error(errno, std::system_category());
+    }
+
+    easy.setup_download(task.url.c_str(), write_callback, file.get());
+}
+
+void osmview::Downloader::Transfer::finalize(CURLcode code)
+{
+    namespace fs = boost::filesystem;
+
+    // close the file
+    file.reset();
+    // move the result and call the callback
+    if (code == CURLE_OK)
+    {
+        fs::rename(tmp_file_name, task.file_name);
+        task.callback(true);
+    }
+    else
+    {
+        fs::remove(tmp_file_name);
+        std::cerr << "Error: downloading " << task.url << " (" << code << "): "
+                  << easy.error_message(code) << std::endl;
+        task.callback(false);
+    }
+}
+
+size_t osmview::Downloader::Transfer::write_callback(char *ptr, size_t size,
+                                                     size_t nmemb,
+                                                     void *userdata)
+{
+    return std::fwrite(ptr, size, nmemb, reinterpret_cast<FILE *>(userdata));
+}
