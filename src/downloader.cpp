@@ -28,7 +28,7 @@
 
 #include <boost/filesystem.hpp>
 
-osmview::Downloader::Downloader(size_t nstreams) : unused_(nstreams)
+osmview::Downloader::Downloader(size_t nstreams) : idle_(nstreams)
 {
 }
 
@@ -74,7 +74,7 @@ void osmview::Downloader::perform()
         item.finalize(result);
 
         // put the transfer into unused pool
-        unused_.push_back(std::move(item));
+        idle_.push_back(std::move(item));
     }
 
     // start new transfers if any
@@ -84,11 +84,11 @@ void osmview::Downloader::perform()
 void osmview::Downloader::start_new()
 {
     std::lock_guard<std::mutex> lock(queue_mutex_);
-    while (!queue_.empty() && !unused_.empty())
+    while (!queue_.empty() && !idle_.empty())
     {
         // take one unused easy
-        auto item = std::move(unused_.back());
-        unused_.pop_back();
+        auto item = std::move(idle_.back());
+        idle_.pop_back();
         // setup new transfer
         item.setup(std::move(queue_.front()));
         queue_.pop();

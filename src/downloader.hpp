@@ -65,7 +65,7 @@ class Downloader
     std::queue<Task> queue_;
     std::mutex queue_mutex_;
     curl_multi curl_multi_;
-    std::vector<Transfer> unused_;
+    std::vector<Transfer> idle_;
     std::vector<Transfer> active_;
 
     void start_new();
