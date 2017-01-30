@@ -22,14 +22,14 @@ public:
 
 class curl_easy
 {
-    char error_buffer[CURL_ERROR_SIZE];
-
     struct deleter
     {
         void operator()(CURL *h) const { curl_easy_cleanup(h); }
     };
 
     std::unique_ptr<CURL, deleter> handle_;
+
+    char error_buffer[CURL_ERROR_SIZE];
 
 public:
     curl_easy();
