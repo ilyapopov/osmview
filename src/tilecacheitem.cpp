@@ -45,7 +45,7 @@ void osmview::TileCacheItem::load()
         SDL2pp::Surface s(file_name_);
 
         {
-            std::unique_lock<std::mutex>(mutex_);
+            std::lock_guard<std::mutex> lock(mutex_);
             surface_ = std::move(s);
         }
 
