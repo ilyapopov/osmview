@@ -75,10 +75,22 @@ void osmview::curl_multi::remove(osmview::curl_easy &easy)
     }
 }
 
-CURLMsg *osmview::curl_multi::info_read()
+int osmview::curl_multi::process_info(std::function<bool (CURL *, CURLcode)> on_done)
 {
     int nmessages;
-    return curl_multi_info_read(handle(), &nmessages);
+    CURLMsg *message;
+
+    while ((message = curl_multi_info_read(handle(), &nmessages)) != nullptr)
+    {
+        if (message->msg == CURLMSG_DONE)
+        {
+            if (!on_done(message->easy_handle, message->data.result))
+            {
+                break;
+            }
+        }
+    }
+    return nmessages;
 }
 
 osmview::curl_global::curl_global()
