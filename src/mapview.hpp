@@ -21,42 +21,36 @@
 #ifndef MAPVIEW_HPP_INCLUDED
 #define MAPVIEW_HPP_INCLUDED
 
+#include "coord.hpp"
+
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <SDL2/SDL.h>
-#include <SDL2pp/Font.hh>
-#include <SDL2pp/Optional.hh>
-#include <SDL2pp/Point.hh>
-#include <SDL2pp/Texture.hh>
+#include "SDL.h"
+#include "SDL2pp/Font.hh"
+#include "SDL2pp/Optional.hh"
+#include "SDL2pp/Point.hh"
+#include "SDL2pp/Texture.hh"
 
 namespace SDL2pp
 {
-    class Rect;
     class Renderer;
 }
 
 namespace osmview
 {
 
-class TileId;
-class TileCache;
+class Layer;
 
 class Mapview
 {
-    enum class VisitOrder
-    {
-        by_column,
-        from_center,
-    };
+    static constexpr int tile_size_ = 256;
+    static constexpr int max_level_ = 18;
 
-    static const int tile_size_ = 256;
-    static const int max_level_ = 18;
-
-    static const double v0_;
-    static const double tau_;
+    static constexpr double v0_ = 2.0;
+    static constexpr double tau_ = 0.3;
 
     double mapx_;
     double mapy_;
@@ -68,7 +62,7 @@ class Mapview
     double level_;
     double scale_;
     
-    std::unique_ptr<TileCache> cache_;
+    std::vector<std::unique_ptr<Layer>> layers_;
 
     SDL2pp::Renderer &renderer_;
     SDL2pp::Point output_size_;
@@ -84,8 +78,6 @@ class Mapview
     SDL2pp::Point to_screen(double x, double y);
     std::pair<double, double> from_screen(const SDL2pp::Point &point);
 
-    std::vector<std::pair<TileId, SDL2pp::Rect>>
-    visible_tiles(int tile_level, VisitOrder order = VisitOrder::from_center);
     void render_hud();
     SDL2pp::Texture make_text_texture(const std::string & text, const SDL_Color & color);
 
@@ -94,7 +86,7 @@ public:
     explicit Mapview(SDL2pp::Renderer &renderer);
     ~Mapview();
 
-    void center_on_latlon(double lat, double lon);
+    void center_on_latlon(osmview::point_latlon);
     void move(double move_x, double move_y);
     void move_pix_hard(double dx, double dy);
     void update(double dt);

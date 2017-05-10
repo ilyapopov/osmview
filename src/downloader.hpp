@@ -22,12 +22,17 @@
 #define DOWNLOADER_HPP
 
 #include "curl.hpp"
+#include "filesystem.hpp"
 
-#include <cstddef>
+#include "curl/curl.h"
+
+#include <cstdio>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <string>
+#include <vector>
 
 namespace osmview
 {
@@ -37,7 +42,7 @@ class Downloader
     struct Task
     {
         std::string url;
-        std::string file_name;
+        fs::path file_name;
         std::function<void(bool)> callback;
     };
 
@@ -52,7 +57,7 @@ class Downloader
         };
         std::unique_ptr<FILE, file_closer> file;
 
-        std::string tmp_file_name;
+        fs::path tmp_file_name;
 
         void setup(Task &&q);
         void finalize(CURLcode code);
@@ -74,7 +79,7 @@ public:
     Downloader(size_t nstreams = 8);
     ~Downloader();
 
-    void enqueue(const std::string &url, const std::string &file_name,
+    void enqueue(const std::string &url, const fs::path &file_name,
                  const std::function<void(bool)> &callback);
     void perform();
 };

@@ -22,24 +22,40 @@
 
 #include <cmath>
 
-double osmview::lon2mapx(double lon)
+namespace osmview {
+namespace {
+
+double lon2mapx(double lon)
 { 
 	return (lon + 180.0) / 360.0;
 }
  
-double osmview::lat2mapy(double lat)
+double lat2mapy(double lat)
 {
     double lat_rad = lat * M_PI/180.0;
     return (1.0 - std::asinh(std::tan(lat_rad)) / M_PI) / 2.0;
 }
  
-double osmview::mapx2lon(double x)
+double mapx2lon(double x)
 {
 	return x * 360.0 - 180.0;
 }
  
-double osmview::mapy2lat(double y)
+double mapy2lat(double y)
 {
 	double n = M_PI - 2.0 * M_PI * y;
     return 180.0 / M_PI * std::atan(std::sinh(n));
+}
+
+} // namespace
+} // namespace osmview
+
+osmview::point_latlon osmview::xy2latlon(osmview::point_xy xy)
+{
+    return {mapy2lat(xy.y), mapx2lon(xy.x)};
+}
+
+osmview::point_xy osmview::latlon2xy(osmview::point_latlon latlon)
+{
+    return {lon2mapx(latlon.lon), lat2mapy(latlon.lat)};
 }

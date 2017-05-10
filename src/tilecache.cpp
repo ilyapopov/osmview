@@ -20,24 +20,25 @@
 
 #include "tilecache.hpp"
 
+#include "tilecacheitem.hpp"
+
+#include "SDL.h"
+#include "SDL2pp/Font.hh"
+#include "SDL2pp/Point.hh"
+#include "SDL2pp/Surface.hh"
+
 #include <algorithm>
 #include <sstream>
 #include <utility>
 #include <vector>
 
-#include <SDL2/SDL.h>
-#include <SDL2pp/Surface.hh>
-#include <SDL2pp/Font.hh>                      // for Font
-#include <SDL2pp/Point.hh>                     // for Point
 
-#include "tilecacheitem.hpp"
-
-osmview::TileCache::TileCache(const std::string &tile_dir,
-                              const std::string &url_base,
+osmview::TileCache::TileCache(fs::path tile_dir,
+                              std::string url_base,
                               SDL2pp::Renderer &renderer,
                               size_t max_size) :
-    tile_dir_(tile_dir),
-    url_base_(url_base),
+    tile_dir_(std::move(tile_dir)),
+    url_base_(std::move(url_base)),
     renderer_(renderer),
     max_size_(max_size),
     tile_size_(256),
@@ -59,7 +60,7 @@ osmview::TileCacheItem &osmview::TileCache::get_item(key_type tile_id)
             gc();
         }
 
-        std::string file_name = make_file_name(tile_id);
+        fs::path file_name = make_file_name(tile_id);
         std::string url = make_url(tile_id);
 
         auto item = TileCacheItem::create(this, file_name, url);
@@ -86,9 +87,11 @@ SDL2pp::Texture & osmview::TileCache::get_texture(key_type tile_id)
     auto & texture = item.get_texture(renderer_);
 
     if (texture)
+    {
         return *texture;
+    }
 
-    return *special_tiles_.at((int)item.state());
+    return *special_tiles_.at(item.state());
 }
 
 void osmview::TileCache::gc()
@@ -110,32 +113,37 @@ void osmview::TileCache::gc()
     }
 }
 
-std::string osmview::TileCache::make_file_name(key_type tile_id) const
+osmview::fs::path osmview::TileCache::make_file_name(key_type tile_id) const
 {
-    std::ostringstream ss;
-    ss << tile_dir_ << '/' << tile_id << ".png";
-    return ss.str();
+    osmview::fs::path result = tile_dir_;
+    result /= std::to_string(tile_id.level());
+    result /= std::to_string(tile_id.x());
+    result /= std::to_string(tile_id.y()) + ".png";
+    return result;
 }
 
 std::string osmview::TileCache::make_url(key_type tile_id) const
 {
     std::ostringstream ss;
-    ss << url_base_ << '/' << tile_id << ".png";
+    ss << url_base_ << '/'
+       << tile_id.level() << '/'
+       << tile_id.x() << '/'
+       << tile_id.y() << ".png";
     return ss.str();
 }
 
 void osmview::TileCache::generate_special_tiles()
 {
     SDL2pp::Font font("data/DejaVuSans.ttf", 20);
-    special_tiles_.emplace((int)TileCacheItem::State::loading,
+    special_tiles_.emplace(TileCacheItem::State::loading,
                            generate_text_tile("Loading...", font));
-    special_tiles_.emplace((int)TileCacheItem::State::downloading,
+    special_tiles_.emplace(TileCacheItem::State::downloading,
                            generate_text_tile("Downoading...", font));
-    special_tiles_.emplace((int)TileCacheItem::State::error,
+    special_tiles_.emplace(TileCacheItem::State::error,
                            generate_text_tile("Error", font));
-    special_tiles_.emplace((int)TileCacheItem::State::scheduled_for_loading,
+    special_tiles_.emplace(TileCacheItem::State::scheduled_for_loading,
                            generate_text_tile("Scheduled", font));
-    special_tiles_.emplace((int)TileCacheItem::State::scheduled_for_downloading,
+    special_tiles_.emplace(TileCacheItem::State::scheduled_for_downloading,
                            generate_text_tile("Scheduled", font));
 }
 

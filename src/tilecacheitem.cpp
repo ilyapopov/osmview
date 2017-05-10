@@ -20,29 +20,31 @@
 
 #include "tilecacheitem.hpp"
 
-#include <algorithm>
-#include <functional>
-
-#include <SDL2pp/Exception.hh>
-
 #include "tilecache.hpp"
 
-osmview::TileCacheItem::TileCacheItem(TileCache * cache,
-                                      const std::string &file_name,
-                                      const std::string &url) :
-    file_name_(file_name),
-    url_(url),
-    cache_(cache),
-    state_(State::free),
-    access_timestamp_(0u)
-{}
+#include "SDL2pp/Exception.hh"
+#include "SDL2pp/Optional.hh"
+#include "SDL2pp/Surface.hh"
+#include "SDL2pp/Texture.hh"
+
+#include <algorithm>
+#include <memory>
+#include <type_traits>
+
+osmview::TileCacheItem::TileCacheItem(TileCache *cache,
+                                      fs::path file_name,
+                                      std::string url)
+    : file_name_(std::move(file_name)), url_(std::move(url)), cache_(cache), state_(State::free),
+      access_timestamp_(0u)
+{
+}
 
 void osmview::TileCacheItem::load()
 {
     state_ = State::loading;
     try
     {
-        SDL2pp::Surface s(file_name_);
+        SDL2pp::Surface s(file_name_.string());
 
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -55,8 +57,9 @@ void osmview::TileCacheItem::load()
     {
         state_ = State::downloading;
         cache_->download(url_, file_name_,
-                         std::bind(&TileCacheItem::download_callback,
-                                   shared_from_this(), std::placeholders::_1));
+                         [self = shared_from_this()](bool success) {
+                             return self->download_callback(success);
+                         });
     }
 }
 
@@ -72,8 +75,8 @@ void osmview::TileCacheItem::download_callback(bool success)
     }
 }
 
-SDL2pp::Optional<SDL2pp::Texture> &osmview::TileCacheItem::get_texture(
-        SDL2pp::Renderer &renderer)
+SDL2pp::Optional<SDL2pp::Texture> &
+osmview::TileCacheItem::get_texture(SDL2pp::Renderer &renderer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -91,11 +94,11 @@ SDL2pp::Optional<SDL2pp::Texture> &osmview::TileCacheItem::get_texture(
 
 std::shared_ptr<osmview::TileCacheItem>
 osmview::TileCacheItem::create(osmview::TileCache *cache,
-                               const std::string &file_name,
+                               const fs::path &file_name,
                                const std::string &url)
 {
     auto item = std::shared_ptr<TileCacheItem>(
-                new TileCacheItem(cache, file_name, url));
+        new TileCacheItem(cache, file_name, url));
     item->initiate_load();
     return item;
 }
@@ -103,5 +106,5 @@ osmview::TileCacheItem::create(osmview::TileCache *cache,
 void osmview::TileCacheItem::initiate_load()
 {
     state_ = State::scheduled_for_loading;
-    cache_->schedule(std::bind(&TileCacheItem::load, shared_from_this()));
+    cache_->schedule([self = shared_from_this()] { return self->load(); });
 }

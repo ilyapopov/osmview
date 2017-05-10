@@ -13,7 +13,9 @@ find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 add_executable(osmview
                src/osmview.cpp src/mapview.cpp src/coord.cpp src/tilecache.cpp
-               src/tilecacheitem.cpp src/downloader.cpp src/curl.cpp)
+               src/tilecacheitem.cpp src/downloader.cpp src/curl.cpp
+               src/layer.cpp src/tilelayer.cpp src/timer.hpp src/tile_id.cpp
+               src/filesystem.cpp)
 
 target_link_libraries(osmview PRIVATE Threads::Threads Boost::filesystem
     ${SDL2PP_LIBRARIES} ${SDLMAIN_LIBRARY} ${CURL_LIBRARIES})

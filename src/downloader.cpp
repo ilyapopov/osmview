@@ -20,13 +20,13 @@
 
 #include "downloader.hpp"
 
+#include <algorithm>
 #include <cerrno>
 #include <cstdio>
 #include <iostream>
-#include <stdexcept>
 #include <system_error>
 
-#include <boost/filesystem.hpp>
+#include "curl/curl.h"
 
 osmview::Downloader::Downloader(size_t nstreams) : idle_(nstreams)
 {
@@ -41,7 +41,7 @@ osmview::Downloader::~Downloader()
 }
 
 void osmview::Downloader::enqueue(const std::string &url,
-                                  const std::string &file_name,
+                                  const fs::path &file_name,
                                   const std::function<void(bool)> &callback)
 {
     std::unique_lock<std::mutex> lock(queue_mutex_);
@@ -56,7 +56,9 @@ void osmview::Downloader::perform()
     while ((message = curl_multi_.info_read()) != nullptr)
     {
         if (message->msg != CURLMSG_DONE)
+        {
             continue;
+        }
 
         CURLcode result = message->data.result;
 
@@ -100,12 +102,11 @@ void osmview::Downloader::start_new()
 
 void osmview::Downloader::Transfer::setup(osmview::Downloader::Task &&q)
 {
-    namespace fs = boost::filesystem;
-
     task = std::move(q);
 
     fs::create_directories(fs::path(task.file_name).parent_path());
-    tmp_file_name = task.file_name + ".tmp";
+    tmp_file_name = task.file_name;
+    tmp_file_name += ".tmp";
 
     file.reset(std::fopen(tmp_file_name.c_str(), "wb"));
 
@@ -119,8 +120,6 @@ void osmview::Downloader::Transfer::setup(osmview::Downloader::Task &&q)
 
 void osmview::Downloader::Transfer::finalize(CURLcode code)
 {
-    namespace fs = boost::filesystem;
-
     // close the file
     file.reset();
     // move the result and call the callback
@@ -142,5 +141,5 @@ size_t osmview::Downloader::Transfer::write_callback(char *ptr, size_t size,
                                                      size_t nmemb,
                                                      void *userdata)
 {
-    return std::fwrite(ptr, size, nmemb, reinterpret_cast<FILE *>(userdata));
+    return std::fwrite(ptr, size, nmemb, static_cast<FILE *>(userdata));
 }
