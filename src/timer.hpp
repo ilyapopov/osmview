@@ -23,7 +23,7 @@
 
 #include <chrono>
 #include <string>
-#include <iostream>
+#include <ostream>
 #include <utility>
 
 namespace osmview
@@ -66,10 +66,11 @@ public:
     DeltaTimer() : last_(started_)
     {}
 
+    ~DeltaTimer() {}
+
     double delta()
     {
-        auto tmp = last_;
-        last_ = now();
+        auto tmp = std::exchange(last_, now());
         return std::chrono::duration_cast<std::chrono::duration<double> >(
                 last_ - tmp).count();
     }
@@ -78,17 +79,18 @@ public:
 class ScopedTimer : public Timer
 {
     std::string label_;
+    std::ostream & stream_;
 
 public:
-    explicit ScopedTimer(std::string label)
-        : label_(std::move(label))
+    explicit ScopedTimer(std::string label, std::ostream & stream)
+        : label_(std::move(label)), stream_(stream)
     {
-        std::cout << label_ << " started" << std::endl;
+        stream_ << label_ << " started" << std::endl;
     }
 
-    ~ScopedTimer() override
+    ~ScopedTimer()
     {
-        std::cout << label_ << " finished in " << time() << " s" << std::endl;
+        stream_ << label_ << " finished in " << time() << " s" << std::endl;
     }
 };
 
