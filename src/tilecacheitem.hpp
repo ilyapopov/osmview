@@ -21,15 +21,17 @@
 #ifndef TILECACHEITEM_HPP_INCLUDED
 #define TILECACHEITEM_HPP_INCLUDED
 
+#include "filesystem.hpp"
+
 #include <atomic>
 #include <cstddef>
 #include <memory>
 #include <mutex>
 #include <string>
 
-#include <SDL2pp/Optional.hh>
-#include <SDL2pp/Surface.hh>
-#include <SDL2pp/Texture.hh>
+#include "SDL2pp/Optional.hh"
+#include "SDL2pp/Surface.hh"
+#include "SDL2pp/Texture.hh"
 
 namespace SDL2pp
 {
@@ -56,7 +58,7 @@ public:
     };
 
 private:
-    const std::string file_name_;
+    const fs::path file_name_;
     const std::string url_;
     SDL2pp::Optional<SDL2pp::Surface> surface_;
     SDL2pp::Optional<SDL2pp::Texture> texture_;
@@ -66,7 +68,7 @@ private:
     size_t access_timestamp_;
 
     TileCacheItem(TileCache * cache,
-                  const std::string & file_name, const std::string & url);
+                  fs::path file_name, std::string url);
 
     void load();
     void download_callback(bool);
@@ -92,7 +94,7 @@ public:
     }
 
     static std::shared_ptr<TileCacheItem>
-    create(TileCache * cache, const std::string & file_name,
+    create(TileCache * cache, const fs::path & file_name,
            const std::string & url);
 
 };

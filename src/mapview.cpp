@@ -20,42 +20,34 @@
 
 #include "mapview.hpp"
 
-#include <algorithm>
+#include "coord.hpp"
+#include "layer.hpp"
+#include "tilelayer.hpp"
+#include "filesystem.hpp"
+
 #include <cmath>
-#include <cstdlib>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
 
-#include <SDL2pp/Rect.hh>      // for Rect
-#include <SDL2pp/Renderer.hh>  // for Renderer
-#include <SDL2pp/Surface.hh>   // for Surface
+#include "SDL2pp/Font.hh"
+#include "SDL2pp/Optional.hh"
+#include "SDL2pp/Point.hh"
+#include "SDL2pp/Renderer.hh"
+#include "SDL2pp/Surface.hh"
+#include "SDL2pp/Texture.hh"
 
-#include "coord.hpp"
-#include "tile_id.hpp"
-#include "tilecache.hpp"
-
-const double osmview::Mapview::v0_ = 2.0;
-const double osmview::Mapview::tau_ = 0.3;
-const int osmview::Mapview::tile_size_;
-const int osmview::Mapview::max_level_;
+constexpr int osmview::Mapview::tile_size_;
+constexpr int osmview::Mapview::max_level_;
+constexpr double osmview::Mapview::v0_;
+constexpr double osmview::Mapview::tau_;
 
 namespace
 {
 
-std::string get_user_cache_dir()
-{
-    const char * d = nullptr;
-    // Using "XDG Base Directory Specification"
-    if ((d = std::getenv("XDG_CACHE_HOME")))
-        return d;
-    // Use default directory
-    if ((d = std::getenv("HOME")))
-        return std::string(d) + "/.cache";
-    throw std::runtime_error("Cannot figure out cache directory location");
-}
 
-} // namespace anonymous
+
+} // namespace
 
 SDL2pp::Point osmview::Mapview::to_screen(double x, double y)
 {
@@ -76,13 +68,24 @@ osmview::Mapview::Mapview(SDL2pp::Renderer &renderer)
     target_level_(1), level_(1.0), scale_(1.0),
     renderer_(renderer), output_size_(renderer_.GetOutputSize()),
     font_("data/DejaVuSans.ttf", 12),
-    show_hud_(false)
+    show_hud_(false),
+    current_fps_(0), smoothed_fps_(0)
 {
     std::string server_name("tile.openstreetmap.org");
 
-    cache_.reset(new TileCache(get_user_cache_dir() + "/maps/" + server_name,
-                           "http://" + server_name,
-                           renderer));
+    layers_.emplace_back(std::make_unique<TileLayer>(server_name,
+                                                     "http://" + server_name,
+                                                     get_user_cache_dir() / "maps" / server_name,
+                                                     256,
+                                                     renderer
+                                                     ));
+
+    layers_.emplace_back(std::make_unique<TileLayer>("OpenSeaMap",
+                                                     "http://tiles.openseamap.org/seamark",
+                                                     get_user_cache_dir() / "maps" / "tiles.openseamap.org",
+                                                     256,
+                                                     renderer
+                                                     ));
 
     SDL2pp::Surface credits_surface = font_.RenderUTF8_Shaded(
         "Cartography © OpenStreetMap contributors | CC BY-SA | openstreetmap.org",
@@ -92,10 +95,11 @@ osmview::Mapview::Mapview(SDL2pp::Renderer &renderer)
 
 osmview::Mapview::~Mapview() = default;
 
-void osmview::Mapview::center_on_latlon(double lat, double lon)
+void osmview::Mapview::center_on_latlon(point_latlon latlon)
 {
-    mapx_ = lon2mapx(lon);
-    mapy_ = lat2mapy(lat);
+    point_xy xy = latlon2xy(latlon);
+    mapx_ = xy.x;
+    mapy_ = xy.y;
     vx_ = vy_ = 0.0;
     fx_ = fy_ = 0.0;
 }
@@ -116,30 +120,26 @@ int osmview::Mapview::zoom(int step)
 {
     target_level_ = clamp(target_level_ + step, 0, max_level_);
 
-    for (const auto & p: visible_tiles(target_level_, VisitOrder::from_center))
-    {
-        cache_->prefetch(p.first);
-    }
+    //TODO(ipopov):
+    //for (const auto & p: visible_tiles(target_level_, VisitOrder::from_center))
+    //{
+    //    cache_->prefetch(p.first);
+    //}
 
     return target_level_;
 }
 
 void osmview::Mapview::render()
 {
-    int tile_level = std::round(level_);
-
-    for (const auto & p: visible_tiles(tile_level, VisitOrder::from_center))
+    for (const auto &l: layers_)
     {
-        auto & texture = cache_->get_texture(p.first);
-        renderer_.Copy(texture, SDL2pp::NullOpt, p.second);
+        l->render(level_, {mapx_, mapy_}, renderer_);
     }
 
-    SDL2pp::Rect rect(output_size_ - credits_texture_->GetSize(),
-                      credits_texture_->GetSize());
-    renderer_.Copy(*credits_texture_, SDL2pp::NullOpt, rect);
-
     if (show_hud_)
+    {
         render_hud();
+    }
 }
 
 void osmview::Mapview::update(double dt)
@@ -156,80 +156,15 @@ void osmview::Mapview::update(double dt)
     mapy_ = clamp(mapy_ + vy_ * dt, 0.0, 1.0);
 
     level_ += (target_level_ - level_) * beta;
-    if (std::abs(level_ - target_level_) < 0.01)
+    if (std::abs(level_ - target_level_) < 1.0/256)
+    {
         level_ = target_level_;
-    level_ = clamp(level_, 0.0, (double)max_level_);
+    }
+    level_ = clamp(level_, 0.0, static_cast<double>(max_level_));
     scale_ = std::pow(2.0, level_);
 
     current_fps_ = 1.0 / dt;
     smoothed_fps_ += (current_fps_ - smoothed_fps_) * beta;
-}
-
-namespace
-{
-    inline int length_squared(const SDL2pp::Point & p)
-    {
-        return p.x*p.x + p.y*p.y;
-    }
-}
-
-std::vector<std::pair<osmview::TileId, SDL2pp::Rect> >
-osmview::Mapview::visible_tiles(int tile_level,
-                                osmview::Mapview::VisitOrder order)
-{
-    output_size_ = renderer_.GetOutputSize();
-
-    double w = output_size_.x;
-    double h = output_size_.y;
-
-    double tile_scale = std::pow(2.0, (double)tile_level);
-    int n = 1 << tile_level;
-
-    double tile_draw_scale = std::pow(2.0, level_ - tile_level);
-    int scaled_size = tile_draw_scale * tile_size_;
-
-    double xc = mapx_ * tile_scale;
-    double yc = mapy_ * tile_scale;
-
-    double xmin = xc - 0.5 * w / scaled_size;
-    double xmax = xc + 0.5 * w / scaled_size;
-    double ymin = yc - 0.5 * h / scaled_size;
-    double ymax = yc + 0.5 * h / scaled_size;
-
-    int imin = std::floor(xmin);
-    int imax = std::ceil(xmax);
-    int jmin = std::max((int)std::floor(ymin), 0);
-    int jmax = std::min((int)std::ceil(ymax), n);
-
-    std::vector<std::pair<TileId, SDL2pp::Rect>> tiles;
-    tiles.reserve((output_size_.x / scaled_size + 1)
-                             * (output_size_.y / scaled_size + 1));
-
-    for(int i = imin; i < imax; ++i)
-    {
-        int i1 = wrap(i, 0, n);
-
-        for(int j = jmin; j < jmax; ++j)
-        {
-            int a = std::round((w/2) + scaled_size * (i - xc));
-            int b = std::round((h/2) + scaled_size * (j - yc));
-            SDL2pp::Rect rect(a, b, scaled_size, scaled_size);
-
-            tiles.emplace_back(TileId(tile_level, i1, j), rect);
-        }
-    }
-
-    if (order == VisitOrder::from_center)
-    {
-        std::sort(tiles.begin(), tiles.end(),
-                  [&](const std::pair<TileId, SDL2pp::Rect> & lhs,
-                  const std::pair<TileId, SDL2pp::Rect> & rhs){
-            return length_squared(lhs.second.GetCentroid() - output_size_/2)
-                    < length_squared(rhs.second.GetCentroid() - output_size_/2);
-        });
-    }
-
-    return tiles;
 }
 
 void osmview::Mapview::render_hud()
@@ -240,16 +175,18 @@ void osmview::Mapview::render_hud()
     {
         // coordinates
         std::ostringstream oss;
-        oss << mapy2lat(mapy_) <<", " << mapx2lon(mapx_);
+        point_latlon latlon = xy2latlon({mapx_, mapy_});
+        oss << latlon.lat <<", " << latlon.lon;
         auto coord_texture = make_text_texture(oss.str(), color);
         renderer_.Copy(coord_texture, SDL2pp::NullOpt, {0, (line++)*linespacing});
     }
     {
         // cache size
-        std::ostringstream oss;
-        oss << "Cache size: " << cache_->size();
-        auto coord_texture = make_text_texture(oss.str(), color);
-        renderer_.Copy(coord_texture, SDL2pp::NullOpt, {0, (line++)*linespacing});
+        //TODO(ipopov): add interface to layer to get some stats
+        //std::ostringstream oss;
+        //oss << "Cache size: " << cache_->size();
+        //auto coord_texture = make_text_texture(oss.str(), color);
+        //renderer_.Copy(coord_texture, SDL2pp::NullOpt, {0, (line++)*linespacing});
     }
     {
         // FPS

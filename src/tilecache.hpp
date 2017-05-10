@@ -21,18 +21,20 @@
 #ifndef TILECACHE_HPP_INCLUDED
 #define TILECACHE_HPP_INCLUDED
 
+#include "downloader.hpp"
+#include "tilecacheitem.hpp"
+#include "tile_id.hpp"
+#include "worker_pool.hpp"
+#include "filesystem.hpp"
+
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 
-#include <SDL2pp/Optional.hh>
-#include <SDL2pp/Texture.hh>
-
-#include "downloader.hpp"
-#include "worker_pool.hpp"
-#include "tile_id.hpp"
+#include "SDL2pp/Optional.hh"
+#include "SDL2pp/Texture.hh"
 
 namespace SDL2pp { class Font; }
 namespace SDL2pp { class Renderer; }
@@ -49,7 +51,7 @@ class TileCache
     using key_type = TileId;
     using map_t = std::unordered_map<key_type, std::shared_ptr<TileCacheItem>>;
 
-    std::string tile_dir_;
+    fs::path tile_dir_;
     std::string url_base_;
     map_t cache_;
 
@@ -60,13 +62,13 @@ class TileCache
 
     size_t max_size_;
 
-    std::unordered_map<int, SDL2pp::Optional<SDL2pp::Texture>>
+    std::unordered_map<TileCacheItem::State, SDL2pp::Optional<SDL2pp::Texture>>
         special_tiles_;
 
     size_t tile_size_;
     size_t seq_;
 
-    std::string make_file_name(key_type tile_id) const;
+    fs::path make_file_name(key_type tile_id) const;
     std::string make_url(key_type tile_id) const;
     void generate_special_tiles();
     SDL2pp::Texture generate_text_tile(const std::string &text,
@@ -75,7 +77,7 @@ class TileCache
     TileCacheItem & get_item(key_type tile_id);
 
 public:
-    TileCache(const std::string & tile_dir, const std::string & url_base,
+    TileCache(fs::path tile_dir, std::string url_base,
               SDL2pp::Renderer &renderer, size_t max_size = 256);
     ~TileCache();
 
@@ -96,7 +98,7 @@ public:
     }
 
     template <typename Callable>
-    void download(const std::string & url, const std::string & file_name,
+    void download(const std::string & url, const fs::path & file_name,
                   Callable && callback)
     {
         downloader_.enqueue(url, file_name, callback);

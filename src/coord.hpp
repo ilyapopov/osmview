@@ -24,10 +24,20 @@
 namespace osmview
 {
 
-double lon2mapx(double lon);
-double lat2mapy(double lat);
-double mapx2lon(double x);
-double mapy2lat(double y);
+struct point_xy
+{
+    double x;
+    double y;
+};
+
+struct point_latlon
+{
+    double lat;
+    double lon;
+};
+
+point_latlon xy2latlon(point_xy xy);
+point_xy latlon2xy(point_latlon latlon);
 
 template <typename T>
 inline T clamp(const T &x, const T &a, const T &b)

@@ -18,17 +18,17 @@
     along with osmview.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <exception>
-#include <iostream>
-
-#include <SDL2/SDL.h> // for constant defines
-#include <SDL2pp/SDL.hh>
-#include <SDL2pp/SDLTTF.hh>
-#include <SDL2pp/Window.hh>
-#include <SDL2pp/Renderer.hh>
-
 #include "mapview.hpp"
 #include "timer.hpp"
+
+#include "SDL.h" // for constant defines
+#include "SDL2pp/Renderer.hh"
+#include "SDL2pp/SDL.hh"
+#include "SDL2pp/SDLTTF.hh"
+#include "SDL2pp/Window.hh"
+
+#include <exception>
+#include <iostream>
 
 int main(int /*argc*/, char ** /*argv*/)
 {
@@ -61,7 +61,7 @@ int main(int /*argc*/, char ** /*argv*/)
         while (true)
         {
             // 1. Process events
-            SDL_Event event;
+            SDL_Event event{};
             while (SDL_PollEvent(&event))
             {
                 switch (event.type)

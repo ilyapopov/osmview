@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <functional>
-#include <ostream>
 
 namespace osmview
 {
@@ -39,11 +38,6 @@ public:
         return lhs.id_ < rhs.id_;
     }
 };
-
-inline std::ostream & operator<<(std::ostream & os, TileId id)
-{
-    return os << id.level() << '/' << id.x() << '/' << id.y();
-}
 
 } // namespace
 
