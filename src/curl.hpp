@@ -2,6 +2,7 @@
 #define CURL_HPP
 
 #include <cstddef>
+#include <functional>
 #include <memory>
 
 #include "curl/curl.h"
@@ -59,13 +60,13 @@ public:
 
     CURLM *handle() const { return handle_.get(); }
 
-    int perform(bool repeat = false);
-
     void add(curl_easy &easy);
 
     void remove(curl_easy &easy);
 
-    CURLMsg *info_read();
+    int perform(bool repeat = false);
+
+    int process_info(std::function<bool(CURL*, CURLcode)> on_done);
 };
 
 } // namespace osmview

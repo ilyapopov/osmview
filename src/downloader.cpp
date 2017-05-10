@@ -52,20 +52,12 @@ void osmview::Downloader::perform()
 {
     curl_multi_.perform();
 
-    CURLMsg *message;
-    while ((message = curl_multi_.info_read()) != nullptr)
+    curl_multi_.process_info([this](CURL *handle, CURLcode result)
     {
-        if (message->msg != CURLMSG_DONE)
-        {
-            continue;
-        }
-
-        CURLcode result = message->data.result;
-
         // find the easy object corresponding to the finished transfer
         auto found =
             std::find_if(active_.begin(), active_.end(), [&](Transfer &item) {
-                return item.easy.handle() == message->easy_handle;
+                return item.easy.handle() == handle;
             });
         // and remove it from the active transfers
         auto item = std::move(*found);
@@ -77,7 +69,8 @@ void osmview::Downloader::perform()
 
         // put the transfer into unused pool
         idle_.push_back(std::move(item));
-    }
+        return true;
+    });
 
     // start new transfers if any
     start_new();
