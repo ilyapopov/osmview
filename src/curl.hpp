@@ -1,9 +1,10 @@
 #ifndef CURL_HPP
 #define CURL_HPP
 
+#include <cstddef>
 #include <memory>
 
-#include <curl/curl.h>
+#include "curl/curl.h"
 
 namespace osmview
 {
@@ -34,12 +35,12 @@ class curl_easy
 public:
     curl_easy();
 
-    CURL *handle() { return handle_.get(); }
+    CURL *handle() const { return handle_.get(); }
 
-    using callback = size_t (*)(char *ptr, size_t size, size_t nmemb,
+    using callback_type = size_t (*)(char *ptr, size_t size, size_t nmemb,
                                 void *userdata);
 
-    void setup_download(const char *url, callback f, void *data);
+    void setup_download(const char *url, callback_type f, void *data);
 
     const char *error_message(CURLcode code) const;
 };
@@ -56,7 +57,7 @@ class curl_multi
 public:
     curl_multi();
 
-    CURLM *handle() { return handle_.get(); }
+    CURLM *handle() const { return handle_.get(); }
 
     int perform(bool repeat = false);
 
