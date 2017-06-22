@@ -31,7 +31,7 @@ class curl_easy
 
     std::unique_ptr<CURL, deleter> handle_;
 
-    char error_buffer[CURL_ERROR_SIZE];
+    char error_buffer_[CURL_ERROR_SIZE];
 
 public:
     curl_easy();
