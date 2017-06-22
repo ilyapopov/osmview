@@ -85,6 +85,7 @@ int main(int /*argc*/, char ** /*argv*/)
                         return 0;
                     case SDL_SCANCODE_TAB:
                         mv.toggle_hud();
+                        break;
                     default:
                         break;
                     }
@@ -95,6 +96,7 @@ int main(int /*argc*/, char ** /*argv*/)
                     case SDL_BUTTON_LEFT:
                         mouse_pan = true;
                         SDL_GetRelativeMouseState(&mousex, &mousey);
+                        break;
                     default:
                         break;
                     }
@@ -104,6 +106,7 @@ int main(int /*argc*/, char ** /*argv*/)
                     {
                     case SDL_BUTTON_LEFT:
                         mouse_pan = false;
+                        break;
                     default:
                         break;
                     }
