@@ -1,2 +1,2 @@
-deps/libSDL2pp = [git]git://github.com/libSDL2pp/libSDL2pp.git
+deps/libSDL2pp = [git]https://github.com/libSDL2pp/libSDL2pp.git
 
