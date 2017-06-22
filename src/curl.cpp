@@ -5,13 +5,13 @@
 
 #include "curl/curl.h"
 
-osmview::curl_easy::curl_easy() : handle_(curl_easy_init()), error_buffer{}
+osmview::curl_easy::curl_easy() : handle_(curl_easy_init()), error_buffer_{}
 {
     if (!handle_)
     {
         throw std::runtime_error("Curl: error in curl_easy_init");
     }
-    curl_easy_setopt(handle(), CURLOPT_ERRORBUFFER, static_cast<char*>(error_buffer));
+    curl_easy_setopt(handle(), CURLOPT_ERRORBUFFER, static_cast<char*>(error_buffer_));
     // this is needed for mutithreaded applications
     curl_easy_setopt(handle(), CURLOPT_NOSIGNAL, 1l);
 }
@@ -29,9 +29,9 @@ void osmview::curl_easy::setup_download(const char *url,
 
 const char *osmview::curl_easy::error_message(CURLcode code) const
 {
-    if (std::strlen(static_cast<const char*>(error_buffer)) != 0)
+    if (std::strlen(static_cast<const char*>(error_buffer_)) != 0)
     {
-        return static_cast<const char*>(error_buffer);
+        return static_cast<const char*>(error_buffer_);
     }
     return curl_easy_strerror(code);
 }
