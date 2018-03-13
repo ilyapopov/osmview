@@ -53,7 +53,7 @@ void osmview::TileCacheItem::load()
 
         state_ = State::surface_ready;
     }
-    catch (SDL2pp::Exception &e)
+    catch (SDL2pp::Exception &)
     {
         state_ = State::downloading;
         cache_->download(url_, file_name_,
@@ -67,7 +67,8 @@ void osmview::TileCacheItem::download_callback(bool success)
 {
     if (success)
     {
-        initiate_load();
+        state_ = State::loading;
+        //initiate_load();
     }
     else
     {
@@ -81,12 +82,34 @@ osmview::TileCacheItem::get_texture(SDL2pp::Renderer &renderer)
     std::lock_guard<std::mutex> lock(mutex_);
 
     // Texture operations are not thread safe, thus done here
-    if (surface_ && !texture_)
+    if (!texture_)
     {
-        texture_.emplace(renderer, *surface_);
+        if (!surface_)
+        {
+            if (!fs::exists(file_name_))
+            {
+                if (state_ != State::downloading)
+                {
+                    state_ = State::downloading;
+                    cache_->download(url_, file_name_,
+                                     [self = shared_from_this()](bool success) {
+                                         return self->download_callback(success);
+                                     });
+                }
+            }
+            else
+            {
+                surface_ = SDL2pp::Surface(file_name_.string());
+            }
+        }
 
-        // delete the surface
-        surface_ = SDL2pp::NullOpt;
+        if (surface_)
+        {
+            texture_.emplace(renderer, *surface_);
+
+            // delete the surface
+            surface_ = SDL2pp::NullOpt;
+        }
     }
 
     return texture_;
@@ -97,8 +120,7 @@ osmview::TileCacheItem::create(osmview::TileCache *cache,
                                const fs::path &file_name,
                                const std::string &url)
 {
-    auto item = std::shared_ptr<TileCacheItem>(
-        new TileCacheItem(cache, file_name, url));
+    auto item = std::make_shared<TileCacheItem>(cache, file_name, url);
     item->initiate_load();
     return item;
 }
@@ -106,5 +128,5 @@ osmview::TileCacheItem::create(osmview::TileCache *cache,
 void osmview::TileCacheItem::initiate_load()
 {
     state_ = State::scheduled_for_loading;
-    cache_->schedule([self = shared_from_this()] { return self->load(); });
+    //cache_->schedule([self = shared_from_this()] { return self->load(); });
 }
