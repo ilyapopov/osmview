@@ -67,14 +67,14 @@ private:
     std::atomic<State> state_;
     size_t access_timestamp_;
 
-    TileCacheItem(TileCache * cache,
-                  fs::path file_name, std::string url);
-
     void load();
     void download_callback(bool);
     void initiate_load();
 
 public:
+
+    TileCacheItem(TileCache * cache,
+                  fs::path file_name, std::string url);
 
     SDL2pp::Optional<SDL2pp::Texture> &get_texture(SDL2pp::Renderer &renderer);
 

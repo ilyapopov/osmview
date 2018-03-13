@@ -47,8 +47,7 @@ public:
     Timer(): started_(now())
     {}
 
-    virtual ~Timer()
-    {}
+    virtual ~Timer();
     
     double time() const
     {
@@ -66,7 +65,7 @@ public:
     DeltaTimer() : last_(started_)
     {}
 
-    ~DeltaTimer() {}
+    ~DeltaTimer();
 
     double delta()
     {
@@ -82,16 +81,9 @@ class ScopedTimer : public Timer
     std::ostream & stream_;
 
 public:
-    explicit ScopedTimer(std::string label, std::ostream & stream)
-        : label_(std::move(label)), stream_(stream)
-    {
-        stream_ << label_ << " started" << std::endl;
-    }
+    explicit ScopedTimer(std::string label, std::ostream & stream);
 
-    ~ScopedTimer()
-    {
-        stream_ << label_ << " finished in " << time() << " s" << std::endl;
-    }
+    ~ScopedTimer();
 };
 
 } // namespace

@@ -76,7 +76,7 @@ class Downloader
     void start_new();
 
 public:
-    Downloader(size_t nstreams = 8);
+    explicit Downloader(size_t nstreams = 8);
     ~Downloader();
 
     void enqueue(const std::string &url, const fs::path &file_name,
