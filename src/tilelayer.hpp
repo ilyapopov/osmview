@@ -1,9 +1,9 @@
 #ifndef TILELAYER_HPP
 #define TILELAYER_HPP
 
+#include "filesystem.hpp"
 #include "layer.hpp"
 #include "tilecache.hpp"
-#include "filesystem.hpp"
 
 #include <cstddef>
 #include <string>
@@ -39,7 +39,7 @@ public:
     TileLayer(const std::string &name, const std::string &url,
               const fs::path &cache_dir, std::size_t tile_size,
               SDL2pp::Renderer &renderer);
-    virtual ~TileLayer();
+    ~TileLayer() override;
 
     void render(double level, const point_xy &map_pos,
                 SDL2pp::Renderer &renderer) override;

@@ -22,8 +22,8 @@
 #define TIMER_HPP_INCLUDED
 
 #include <chrono>
-#include <string>
 #include <ostream>
+#include <string>
 #include <utility>
 
 namespace osmview
@@ -65,7 +65,7 @@ public:
     DeltaTimer() : last_(started_)
     {}
 
-    ~DeltaTimer();
+    ~DeltaTimer() override;
 
     double delta()
     {
@@ -83,9 +83,9 @@ class ScopedTimer : public Timer
 public:
     explicit ScopedTimer(std::string label, std::ostream & stream);
 
-    ~ScopedTimer();
+    ~ScopedTimer() override;
 };
 
-} // namespace
+} // namespace osmview
 
 #endif

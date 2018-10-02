@@ -20,7 +20,7 @@ class Layer
     std::string name_;
 
 public:
-    Layer(std::string name);
+    explicit Layer(std::string name);
     virtual ~Layer();
 
     const std::string &name() const { return name_; }

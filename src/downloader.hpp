@@ -84,6 +84,6 @@ public:
     void perform();
 };
 
-} // namespace
+} // namespace osmview
 
 #endif // DOWNLOADER_HPP

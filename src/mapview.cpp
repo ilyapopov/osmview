@@ -21,9 +21,9 @@
 #include "mapview.hpp"
 
 #include "coord.hpp"
+#include "filesystem.hpp"
 #include "layer.hpp"
 #include "tilelayer.hpp"
-#include "filesystem.hpp"
 
 #include <cmath>
 #include <iomanip>

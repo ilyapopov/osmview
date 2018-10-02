@@ -15,13 +15,13 @@ class TileId
 
 public:
     constexpr TileId(int level, int x, int y) noexcept:
-        id_(((uint64_t)level << 44) | ((uint64_t)x << 22) | (uint64_t)y)
+        id_((static_cast<uint64_t>(level) << 44) | (static_cast<uint64_t>(x) << 22) | static_cast<uint64_t>(y))
     {}
 
     constexpr uint64_t id() const {return id_;}
-    constexpr int level() const {return (int)(id_ >> 44);}
-    constexpr int x() const {return (int)((id_ >> 22) & coord_mask_);}
-    constexpr int y() const {return (int)(id_ & coord_mask_);}
+    constexpr int level() const {return static_cast<int>(id_ >> 44);}
+    constexpr int x() const {return static_cast<int>((id_ >> 22) & coord_mask_);}
+    constexpr int y() const {return static_cast<int>(id_ & coord_mask_);}
 
     friend constexpr bool operator==(TileId lhs, TileId rhs)
     {
@@ -39,7 +39,7 @@ public:
     }
 };
 
-} // namespace
+} // namespace osmview
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -57,7 +57,7 @@ struct hash<osmview::TileId>
     }
 };
 
-} // namespace
+} // namespace std
 
 
 #endif // OSMVIEW_TILE_ID_HPP

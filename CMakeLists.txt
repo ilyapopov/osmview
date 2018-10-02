@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(osmview C CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+
 set(SDL2PP_WITH_IMAGE ON ) # if you need SDL_image support
 set(SDL2PP_WITH_MIXER OFF) # if you need SDL_mixer support
 set(SDL2PP_WITH_TTF   ON ) # if you need SDL_ttf support
