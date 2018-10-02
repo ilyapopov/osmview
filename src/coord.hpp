@@ -42,8 +42,12 @@ point_xy latlon2xy(point_latlon latlon);
 template <typename T>
 inline T clamp(const T &x, const T &a, const T &b)
 {
-    if (x < a) return a;
-    if (b < x) return b;
+    if (x < a) {
+        return a;
+    }
+    if (b < x) {
+        return b;
+    }
     return x;
 }
 
@@ -62,6 +66,6 @@ inline T wrap(const T &x, const T &a, const T &b)
     return y;
 }
 
-} // namespace
+} // namespace osmview
 
 #endif

@@ -44,7 +44,7 @@ public:
     void emplace(ArgTypes&&... args);
 
     template<typename ArgType>
-    void push(ArgType&& job);
+    void push(ArgType&& task);
 
     void stop();
 
@@ -98,10 +98,12 @@ void WorkerPool<Task>::worker_func()
             return !task_queue_.empty() || command_ != Command::none;
         });
 
-        if (command_ == Command::stop)
+        if (command_ == Command::stop) {
             break;
-        if (command_ == Command::finish && task_queue_.empty())
+        }
+        if (command_ == Command::finish && task_queue_.empty()) {
             break;
+        }
 
         Task task(std::move(task_queue_.front()));
         task_queue_.pop();
@@ -144,6 +146,6 @@ void WorkerPool<Task>::stop()
     command_cond_var_.notify_all();
 }
 
-} // namespace
+} // namespace osmview
 
 #endif

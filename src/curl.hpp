@@ -66,7 +66,7 @@ public:
 
     int perform(bool repeat = false);
 
-    int process_info(std::function<bool(CURL*, CURLcode)> on_done);
+    int process_info(const std::function<bool (CURL *, CURLcode)> &on_done);
 };
 
 } // namespace osmview

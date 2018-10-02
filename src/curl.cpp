@@ -75,7 +75,7 @@ void osmview::curl_multi::remove(osmview::curl_easy &easy)
     }
 }
 
-int osmview::curl_multi::process_info(std::function<bool (CURL *, CURLcode)> on_done)
+int osmview::curl_multi::process_info(const std::function<bool (CURL *, CURLcode)> &on_done)
 {
     int nmessages;
     CURLMsg *message;

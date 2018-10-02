@@ -22,10 +22,10 @@
 #define TILECACHE_HPP_INCLUDED
 
 #include "downloader.hpp"
-#include "tilecacheitem.hpp"
-#include "tile_id.hpp"
-#include "worker_pool.hpp"
 #include "filesystem.hpp"
+#include "tile_id.hpp"
+#include "tilecacheitem.hpp"
+#include "worker_pool.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -105,6 +105,6 @@ public:
     }
 };
 
-} // namespace
+} // namespace osmview
 
 #endif

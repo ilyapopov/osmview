@@ -1,9 +1,8 @@
 #include "timer.hpp"
 
-osmview::Timer::~Timer()
-{}
+osmview::Timer::~Timer() = default;
 
-osmview::DeltaTimer::~DeltaTimer() {}
+osmview::DeltaTimer::~DeltaTimer() = default;
 
 osmview::ScopedTimer::ScopedTimer(std::string label, std::ostream &stream)
     : label_(std::move(label)), stream_(stream)

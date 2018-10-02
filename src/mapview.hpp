@@ -37,7 +37,7 @@
 namespace SDL2pp
 {
     class Renderer;
-}
+} // namespace SDL2pp
 
 namespace osmview
 {
@@ -101,6 +101,6 @@ public:
     void render();
 };
 
-} // namespace
+} // namespace osmview
 
 #endif
