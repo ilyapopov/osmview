@@ -26,9 +26,9 @@
 #include "tilelayer.hpp"
 
 #include <cmath>
+#include <cstdlib>
 #include <iomanip>
 #include <sstream>
-#include <stdexcept>
 
 #include "SDL2pp/Font.hh"
 #include "SDL2pp/Optional.hh"

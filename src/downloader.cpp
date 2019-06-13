@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <iostream>
 #include <system_error>
+#include <utility>
 
 #include "curl/curl.h"
 
@@ -124,6 +125,7 @@ void osmview::Downloader::Transfer::finalize(CURLcode code)
     else
     {
         fs::remove(tmp_file_name);
+        // FIXME: do not hardcode printing, callback should take care of this
         std::cerr << "Error: downloading " << task.url << " (" << code << "): "
                   << easy.error_message(code) << std::endl;
         task.callback(false);

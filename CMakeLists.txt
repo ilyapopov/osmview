@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(osmview C CXX)
 
+option(USE_STD_FILESYSTEM OFF)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 set(SDL2PP_WITH_IMAGE ON ) # if you need SDL_image support
@@ -11,7 +13,9 @@ add_subdirectory(deps/libSDL2pp)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 find_package(CURL REQUIRED)
-find_package(Boost COMPONENTS system filesystem REQUIRED)
+if(NOT USE_STD_FILESYSTEM)
+    find_package(Boost COMPONENTS system filesystem REQUIRED)
+endif()
 
 add_executable(osmview
                src/osmview.cpp
@@ -28,8 +32,13 @@ add_executable(osmview
                src/filesystem.cpp
               )
 
-target_link_libraries(osmview PRIVATE Threads::Threads Boost::filesystem
+target_link_libraries(osmview PRIVATE Threads::Threads
     ${SDL2PP_LIBRARIES} ${SDLMAIN_LIBRARY} ${CURL_LIBRARIES})
+if(USE_STD_FILESYSTEM)
+    target_link_libraries(osmview PRIVATE stdc++fs)
+else()
+    target_link_libraries(osmview PRIVATE Boost::filesystem)
+endif()
 target_include_directories(osmview SYSTEM PRIVATE ${SDL2PP_INCLUDE_DIRS}
     ${CURL_INCLUDE_DIRS})
 set_target_properties(osmview PROPERTIES

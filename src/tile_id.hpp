@@ -1,6 +1,7 @@
 #ifndef OSMVIEW_TILE_ID_HPP
 #define OSMVIEW_TILE_ID_HPP
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 

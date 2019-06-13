@@ -1,6 +1,7 @@
 #include "filesystem.hpp"
 
 #include <cstdlib>
+#include <stdexcept>
 
 osmview::fs::path osmview::get_user_cache_dir()
 {
@@ -13,7 +14,7 @@ osmview::fs::path osmview::get_user_cache_dir()
     // Use default directory
     if ((d = std::getenv("HOME")) != nullptr)
     {
-        return std::string(d) + "/.cache";
+        return fs::path(d) / ".cache";
     }
     throw std::runtime_error("Cannot figure out cache directory location");
 }

@@ -3,9 +3,7 @@
 
 #include "coord.hpp"
 
-#include <array>
 #include <string>
-#include <utility>
 
 namespace SDL2pp
 {
