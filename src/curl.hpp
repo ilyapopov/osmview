@@ -2,10 +2,10 @@
 #define CURL_HPP
 
 #include <cstddef>
-#include <functional>
 #include <memory>
+#include <optional>
 
-#include "curl/curl.h"
+struct CURLMsg;
 
 namespace osmview
 {
@@ -24,41 +24,52 @@ public:
 
 class curl_easy
 {
-    struct deleter
-    {
-        void operator()(CURL *h) const { curl_easy_cleanup(h); }
-    };
-
-    std::unique_ptr<CURL, deleter> handle_;
-
-    char error_buffer_[CURL_ERROR_SIZE];
-
 public:
+    using curl_t = void;
+
     curl_easy();
 
-    CURL *handle() const { return handle_.get(); }
+    curl_t *handle() const { return handle_.get(); }
 
     using callback_type = size_t (*)(char *ptr, size_t size, size_t nmemb,
-                                void *userdata);
+                                     void *userdata);
 
     void setup_download(const char *url, callback_type f, void *data);
 
-    const char *error_message(CURLcode code) const;
+    curl_easy &set_url(const char *url);
+    curl_easy &set_callback(callback_type f, void *data);
+    curl_easy &set_user_agent(const char *user_agent);
+
+    const char *error_message() const;
+private:
+    struct deleter
+    {
+        void operator()(curl_t *h) const;
+    };
+
+    std::unique_ptr<curl_t, deleter> handle_;
+    std::unique_ptr<char[]> error_buffer_;
+
 };
 
 class curl_multi
 {
-    struct deleter
+public:
+    using curlm_t = void;
+
+    class message
     {
-        void operator()(CURLM *h) const { curl_multi_cleanup(h); }
+        const CURLMsg *message_;
+    public:
+        explicit message(const CURLMsg *message): message_(message) {}
+        bool success();
+        const char * error_message();
+        curl_easy::curl_t *handle();
     };
 
-    std::unique_ptr<CURLM, deleter> handle_;
-
-public:
     curl_multi();
 
-    CURLM *handle() const { return handle_.get(); }
+    curlm_t *handle() const { return handle_.get(); }
 
     void add(curl_easy &easy);
 
@@ -66,7 +77,16 @@ public:
 
     int perform(bool repeat = false);
 
-    int process_info(const std::function<bool (CURL *, CURLcode)> &on_done);
+    std::optional<message> get_message();
+
+private:
+    struct deleter
+    {
+        void operator()(curlm_t *h) const;
+    };
+
+    std::unique_ptr<curlm_t, deleter> handle_;
+
 };
 
 } // namespace osmview

@@ -1,5 +1,9 @@
 #include "timer.hpp"
 
+#include <ostream>
+#include <string>
+#include <utility>
+
 osmview::Timer::~Timer() = default;
 
 osmview::DeltaTimer::~DeltaTimer() = default;

@@ -37,18 +37,6 @@
 #include "SDL2pp/Surface.hh"
 #include "SDL2pp/Texture.hh"
 
-constexpr int osmview::Mapview::tile_size_;
-constexpr int osmview::Mapview::max_level_;
-constexpr double osmview::Mapview::v0_;
-constexpr double osmview::Mapview::tau_;
-
-namespace
-{
-
-
-
-} // namespace
-
 SDL2pp::Point osmview::Mapview::to_screen(double x, double y)
 {
     int x1 = std::round((x - mapx_) * scale_);

@@ -24,8 +24,6 @@
 #include "curl.hpp"
 #include "filesystem.hpp"
 
-#include "curl/curl.h"
-
 #include <cstdio>
 #include <functional>
 #include <memory>
@@ -60,7 +58,7 @@ class Downloader
         fs::path tmp_file_name;
 
         void setup(Task &&q);
-        void finalize(CURLcode code);
+        void finalize(curl_multi::message msg);
 
         static size_t write_callback(char *ptr, size_t size, size_t nmemb,
                                      void *userdata);
@@ -81,7 +79,7 @@ public:
 
     void enqueue(const std::string &url, const fs::path &file_name,
                  const std::function<void(bool)> &callback);
-    void perform();
+    size_t perform();
 };
 
 } // namespace osmview

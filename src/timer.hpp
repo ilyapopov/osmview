@@ -22,7 +22,7 @@
 #define TIMER_HPP_INCLUDED
 
 #include <chrono>
-#include <ostream>
+#include <iosfwd>
 #include <string>
 #include <utility>
 

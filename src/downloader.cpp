@@ -27,8 +27,6 @@
 #include <system_error>
 #include <utility>
 
-#include "curl/curl.h"
-
 osmview::Downloader::Downloader(size_t nstreams) : idle_(nstreams)
 {
 }
@@ -49,16 +47,18 @@ void osmview::Downloader::enqueue(const std::string &url,
     queue_.push({url, file_name, callback});
 }
 
-void osmview::Downloader::perform()
+size_t osmview::Downloader::perform()
 {
     curl_multi_.perform();
 
-    curl_multi_.process_info([this](CURL *handle, CURLcode result)
+    std::optional<curl_multi::message> msg;
+
+    while((msg = curl_multi_.get_message()).has_value())
     {
         // find the easy object corresponding to the finished transfer
         auto found =
             std::find_if(active_.begin(), active_.end(), [&](Transfer &item) {
-                return item.easy.handle() == handle;
+                return item.easy.handle() == msg->handle();
             });
         // and remove it from the active transfers
         auto item = std::move(*found);
@@ -66,15 +66,16 @@ void osmview::Downloader::perform()
         curl_multi_.remove(item.easy);
 
         // process the finished transfer
-        item.finalize(result);
+        item.finalize(msg.value());
 
         // put the transfer into unused pool
         idle_.push_back(std::move(item));
-        return true;
-    });
+    }
 
     // start new transfers if any
     start_new();
+
+    return queue_.size() + active_.size();
 }
 
 void osmview::Downloader::start_new()
@@ -109,15 +110,17 @@ void osmview::Downloader::Transfer::setup(osmview::Downloader::Task &&q)
         throw std::system_error(errno, std::system_category());
     }
 
-    easy.setup_download(task.url.c_str(), write_callback, file.get());
+    easy.set_url(task.url.c_str())
+        .set_callback(write_callback, file.get())
+        .set_user_agent("osmview https://bitbucket.org/ipopov/osmview/");
 }
 
-void osmview::Downloader::Transfer::finalize(CURLcode code)
+void osmview::Downloader::Transfer::finalize(curl_multi::message msg)
 {
     // close the file
     file.reset();
     // move the result and call the callback
-    if (code == CURLE_OK)
+    if (msg.success())
     {
         fs::rename(tmp_file_name, task.file_name);
         task.callback(true);
@@ -126,8 +129,8 @@ void osmview::Downloader::Transfer::finalize(CURLcode code)
     {
         fs::remove(tmp_file_name);
         // FIXME: do not hardcode printing, callback should take care of this
-        std::cerr << "Error: downloading " << task.url << " (" << code << "): "
-                  << easy.error_message(code) << std::endl;
+        std::cerr << "Error: downloading " << task.url << " : "
+                  << easy.error_message() << std::endl;
         task.callback(false);
     }
 }

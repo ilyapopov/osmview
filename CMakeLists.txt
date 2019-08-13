@@ -20,16 +20,28 @@ endif()
 add_executable(osmview
                src/osmview.cpp
                src/mapview.cpp
+               src/mapview.hpp
                src/coord.cpp
+               src/coord.hpp
                src/tilecache.cpp
+               src/tilecache.hpp
                src/tilecacheitem.cpp
+               src/tilecacheitem.hpp
                src/downloader.cpp
+               src/downloader.hpp
                src/curl.cpp
+               src/curl.hpp
                src/layer.cpp
+               src/layer.hpp
                src/tilelayer.cpp
+               src/tilelayer.hpp
                src/timer.cpp
+               src/timer.hpp
                src/tile_id.cpp
+               src/tile_id.hpp
                src/filesystem.cpp
+               src/filesystem.hpp
+               src/worker_pool.hpp
               )
 
 target_link_libraries(osmview PRIVATE Threads::Threads
@@ -42,7 +54,7 @@ endif()
 target_include_directories(osmview SYSTEM PRIVATE ${SDL2PP_INCLUDE_DIRS}
     ${CURL_INCLUDE_DIRS})
 set_target_properties(osmview PROPERTIES
-    CXX_STANDARD 14
+    CXX_STANDARD 17
     CXX_EXTENSIONS OFF
     #CXX_INCLUDE_WHAT_YOU_USE "iwyu;-I/usr/lib/llvm-4.0/lib/clang/4.0.0/include/"
     #CXX_CLANG_TIDY "clang-tidy;-checks=*,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-type-union-access,-readability-redundrant-declaration"
