@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <memory>
 #include <type_traits>
+#include <utility>
 
 osmview::TileCacheItem::TileCacheItem(TileCache *cache,
                                       fs::path file_name,
@@ -44,7 +45,7 @@ void osmview::TileCacheItem::load()
     state_ = State::loading;
     try
     {
-        SDL2pp::Surface s(file_name_.string());
+        SDL2pp::Surface s(file_name_.native());
 
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -99,7 +100,7 @@ osmview::TileCacheItem::get_texture(SDL2pp::Renderer &renderer)
             }
             else
             {
-                surface_ = SDL2pp::Surface(file_name_.string());
+                surface_ = SDL2pp::Surface(file_name_.native());
             }
         }
 
