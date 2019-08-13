@@ -9,10 +9,8 @@ pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
-          - apt-get update && apt-get install -y cmake libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libcurl4-openssl-dev
-          - mkdir deps
-          - git clone https://github.com/libSDL2pp/libSDL2pp deps/libSDL2pp
-          - mkdir build
-          - cd build
+          - apt-get update && apt-get install -y cmake libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libcurl4-openssl-dev libboost-dev libboost-filesystem-dev 
+          - mkdir deps && git clone https://github.com/libSDL2pp/libSDL2pp deps/libSDL2pp
+          - mkdir build && cd build
           - cmake ..
           - cmake --build .
