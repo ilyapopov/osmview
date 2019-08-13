@@ -3,12 +3,16 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: gcc:6.5
+image: gcc:8.3
 
 pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
+          - apt-get update && apt-get install -y cmake libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libcurl4-openssl-dev
+          - mkdir deps
+          - git clone https://github.com/libSDL2pp/libSDL2pp deps/libSDL2pp
           - mkdir build
-          - cmake -S . -B build 
-          - cmake --build build
+          - cd build
+          - cmake ..
+          - cmake --build .
