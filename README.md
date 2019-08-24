@@ -3,29 +3,27 @@ osmview
 
 Desktop [OpenStreetMap](https://openstreetmap.org) viewer.
 
-Usage
-=====
-
-
 Installation
-============
+------------
 
-Download
---------
-Source code is hosted [on Bitbucket](https://bitbucket.org/ipopov/osmview).
+### Download
 
-To clone the source repository you need
-[Mercurial](https://www.mercurial-scm.org/) and [Git](https://git-scm.com/).
-Install them on a apt based system using
+Source code is hosted [on Github](https://github.com/ilyapopov/osmview).
 
-    sudo apt install mercurial git
+To clone the source repository you need [Git](https://git-scm.com/).
+Install it on a apt based system using
+
+    sudo apt install git
 
 Then clone the source repository and update
 
-    hg clone https://bitbucket.org/ipopov/osmview
+    git clone https://github.com/ilyapopov/osmview
 
-Dependencies
-------------
+Then do:
+
+    git submodule init && git submodule update
+
+### Dependencies
 
 - [libSDL2](https://www.libsdl.org/) with Image and TTF components.
 - [libcurl](http://curl.haxx.se/)
@@ -38,8 +36,7 @@ To install dependencies on apt-based system (Debian and Ubuntu):
 
     sudo apt install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libcurl4-openssl-dev libboost-filesystem-dev
 
-Compile
--------
+### Compile
 
 To compile, you need a C++11 conforming compiler (GCC and Clang tested)
 with a standard library, recent CMake.
@@ -48,7 +45,7 @@ with a standard library, recent CMake.
     mkdir build
     cd build
     cmake .. -DCMAKE_BUILD_TYPE=Release
-    make
+    cmake --build
 
 Then run osmview:
 
@@ -58,22 +55,16 @@ Then run osmview:
 *Enjoy!*
 
 Author
-======
+------
 
-Ilya Popov <ilia.b.popov@gmail.com>
-
-Links
-=====
-
-Source code is hosted [on Bitbucket](https://bitbucket.org/ipopov/osmview).
-Feel free to provide feedback, file bugs and make pull requests there.
+[Ilya Popov](https://github.com/ilyapopov)
 
 License
-=======
+-------
 
 Source code available under terms of GPL v3 or later license.
 
 Bundled libSDL2pp is under terms of zlib licence.
 
 Map data [Copyright OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
-under [ODbL license](http://www.opendatacommons.org/licenses/odbl).
+under [ODbL license](https://opendatacommons.org/licenses/odbl/).

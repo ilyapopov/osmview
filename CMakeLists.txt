@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 set(SDL2PP_WITH_IMAGE ON ) # if you need SDL_image support
 set(SDL2PP_WITH_MIXER OFF) # if you need SDL_mixer support
 set(SDL2PP_WITH_TTF   ON ) # if you need SDL_ttf support
-add_subdirectory(deps/libSDL2pp)
+add_subdirectory(external/libSDL2pp)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
