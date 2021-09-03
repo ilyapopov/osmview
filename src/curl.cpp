@@ -18,7 +18,7 @@ osmview::curl_easy::curl_easy()
     // this is needed for mutithreaded applications
     curl_easy_setopt(handle(), CURLOPT_NOSIGNAL, 1l);
     curl_easy_setopt(handle(), CURLOPT_FAILONERROR, 1l);
-    curl_easy_setopt(handle(), CURLOPT_TIMEOUT, 5l);
+    curl_easy_setopt(handle(), CURLOPT_TIMEOUT, 2l);
     curl_easy_setopt(handle(), CURLOPT_FOLLOWLOCATION, 1l);
 }
 
