@@ -27,24 +27,30 @@
 #include <system_error>
 #include <utility>
 
-osmview::Downloader::Downloader(size_t nstreams) : idle_(nstreams)
+osmview::Downloader::Downloader(size_t nstreams)
+    : idle_(nstreams)
 {
 }
 
 osmview::Downloader::~Downloader()
 {
-    for (auto &transfer : active_)
-    {
-        curl_multi_.remove(transfer.easy);
+    // give a change for transfers to finish
+    perform();
+    // stop all unfinished ones
+    for (const auto& t : downloading_) {
+        curl_multi_.remove(std::move(t->easy_));
     }
 }
 
-void osmview::Downloader::enqueue(const std::string &url,
-                                  const fs::path &file_name,
-                                  const std::function<void(bool)> &callback)
+void osmview::Downloader::enqueue(const std::string& url,
+    const fs::path& file_name,
+    const std::function<void(bool)>& callback)
 {
-    std::unique_lock<std::mutex> lock(queue_mutex_);
-    queue_.push({url, file_name, callback});
+    auto t = std::make_unique<Task>(url, file_name, callback);
+    {
+        std::lock_guard<std::mutex> lock(queue_mutex_);
+        todo_.push(std::move(t));
+    }
 }
 
 size_t osmview::Downloader::perform()
@@ -53,91 +59,88 @@ size_t osmview::Downloader::perform()
 
     std::optional<curl_multi::message> msg;
 
-    while((msg = curl_multi_.get_message()).has_value())
-    {
+    while ((msg = curl_multi_.get_message()).has_value()) {
         // find the easy object corresponding to the finished transfer
-        auto found =
-            std::find_if(active_.begin(), active_.end(), [&](Transfer &item) {
-                return item.easy.handle() == msg->handle();
-            });
+        auto* t = static_cast<Transfer*>(msg->get_private());
+        auto found = downloading_.find(t);
         // and remove it from the active transfers
-        auto item = std::move(*found);
-        active_.erase(found);
-        curl_multi_.remove(item.easy);
-
-        // process the finished transfer
-        item.finalize(msg.value());
-
-        // put the transfer into unused pool
-        idle_.push_back(std::move(item));
+        auto node = downloading_.extract(found);
+        auto easy = node.value()->finalize(*msg, curl_multi_);
+        // put the easy back into idle pool
+        idle_.push_back(std::move(easy));
     }
 
     // start new transfers if any
     start_new();
 
-    return queue_.size() + active_.size();
+    return todo_.size() + downloading_.size();
 }
 
 void osmview::Downloader::start_new()
 {
     std::lock_guard<std::mutex> lock(queue_mutex_);
-    while (!queue_.empty() && !idle_.empty())
-    {
+    while (!todo_.empty() && !idle_.empty()) {
         // take one unused easy
-        auto item = std::move(idle_.back());
+        auto easy = std::move(idle_.back());
         idle_.pop_back();
-        // setup new transfer
-        item.setup(std::move(queue_.front()));
-        queue_.pop();
-        // submit it
-        curl_multi_.add(item.easy);
-        active_.push_back(std::move(item));
+        // take one task
+        auto task = std::move(todo_.front());
+        todo_.pop();
+        // setup new transfer from task + easy
+        auto transfer = std::make_unique<Transfer>(std::move(task), std::move(easy), curl_multi_);
+        downloading_.insert(std::move(transfer));
     }
 }
 
-void osmview::Downloader::Transfer::setup(osmview::Downloader::Task &&q)
+osmview::Downloader::Transfer::Transfer(std::unique_ptr<Task> task_ptr, curl_easy&& easy, curl_multi& multi)
+    : task_(std::move(task_ptr))
+    , easy_(setup(*task_, std::move(easy), multi))
 {
-    task = std::move(q);
-
-    fs::create_directories(fs::path(task.file_name).parent_path());
-    tmp_file_name = task.file_name;
+    fs::create_directories(fs::path(task_->file_name_).parent_path());
+    tmp_file_name = task_->file_name_;
     tmp_file_name += ".tmp";
 
-    file.reset(std::fopen(tmp_file_name.c_str(), "wb"));
-
-    if (!file)
-    {
-        throw std::system_error(errno, std::system_category());
-    }
-
-    easy.set_url(task.url.c_str())
-        .set_callback(write_callback, file.get())
-        .set_user_agent("osmview https://bitbucket.org/ipopov/osmview/");
+    writer_.open(tmp_file_name.c_str());
 }
 
-void osmview::Downloader::Transfer::finalize(curl_multi::message msg)
+osmview::curl_easy_in_multi osmview::Downloader::Transfer::setup(Task& task, curl_easy&& easy, curl_multi& multi)
+{
+    easy.set_url(task.url_.c_str())
+        .set_user_agent("osmview https://github.com/ilyapopov/osmview")
+        .set_write_callback(writer_)
+        .set_private(reinterpret_cast<void*>(this));
+    return multi.add(std::move(easy));
+}
+
+size_t osmview::Downloader::FileWriter::operator()(std::string_view data)
+{
+    return std::fwrite(data.data(), 1, data.size(), file.get());
+}
+
+osmview::curl_easy osmview::Downloader::Transfer::finalize(curl_multi::message msg, curl_multi& multi)
 {
     // close the file
-    file.reset();
+    writer_.close();
     // move the result and call the callback
-    if (msg.success())
-    {
-        fs::rename(tmp_file_name, task.file_name);
-        task.callback(true);
-    }
-    else
-    {
+    auto easy = multi.remove(std::move(easy_));
+
+    if (msg.success()) {
+        fs::rename(tmp_file_name, task_->file_name_);
+        task_->callback_(true);
+    } else {
         fs::remove(tmp_file_name);
         // FIXME: do not hardcode printing, callback should take care of this
-        std::cerr << "Error: downloading " << task.url << " : "
+        std::cerr << "Error: downloading " << task_->url_ << " : "
                   << easy.error_message() << std::endl;
-        task.callback(false);
+        task_->callback_(false);
     }
+    return easy;
 }
 
-size_t osmview::Downloader::Transfer::write_callback(char *ptr, size_t size,
-                                                     size_t nmemb,
-                                                     void *userdata)
+void osmview::Downloader::FileWriter::open(const char* path)
 {
-    return std::fwrite(ptr, size, nmemb, static_cast<FILE *>(userdata));
+    file.reset(std::fopen(path, "wb"));
+    if (!file) {
+        throw std::system_error(errno, std::system_category());
+    }
 }

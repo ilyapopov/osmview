@@ -38,3 +38,4 @@
 # End of https://www.gitignore.io/api/c++
 
 build*
+*.txt.user

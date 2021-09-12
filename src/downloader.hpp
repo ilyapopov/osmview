@@ -29,47 +29,75 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <set>
 #include <string>
 #include <vector>
 
-namespace osmview
-{
+namespace osmview {
 
-class Downloader
-{
-    struct Task
+struct unique_ptr_cmp {
+    template <typename T>
+    bool operator()(const std::unique_ptr<T>& lhs, const T* rhs) const
     {
-        std::string url;
-        fs::path file_name;
-        std::function<void(bool)> callback;
+        return lhs.get() < rhs;
+    }
+    template <typename T>
+    bool operator()(const T* lhs, const std::unique_ptr<T>& rhs) const
+    {
+        return lhs < rhs.get();
+    }
+    template <typename T>
+    bool operator()(const std::unique_ptr<T>& lhs, const std::unique_ptr<T>& rhs) const
+    {
+        return lhs < rhs;
+    }
+
+    using is_transparent = int;
+};
+
+class Downloader {
+    struct Task {
+        std::string url_;
+        fs::path file_name_;
+        std::function<void(bool)> callback_;
+        Task(std::string url, fs::path filename, std::function<void(bool)> callback)
+            : url_(std::move(url))
+            , file_name_(std::move(filename))
+            , callback_(std::move(callback))
+        {
+        }
     };
 
-    struct Transfer
-    {
-        curl_easy easy;
-        Task task;
-
-        struct file_closer
-        {
-            void operator()(FILE *f) const { std::fclose(f); }
+    struct FileWriter {
+        struct file_closer {
+            void operator()(FILE* f) const { std::fclose(f); }
         };
-        std::unique_ptr<FILE, file_closer> file;
+        std::unique_ptr<FILE, file_closer> file = nullptr;
 
+        void open(const char* path);
+        void close() { file.reset(); };
+        size_t operator()(std::string_view data);
+    };
+
+    struct Transfer {
+        std::unique_ptr<Task> task_;
+        curl_easy_in_multi easy_;
         fs::path tmp_file_name;
+        FileWriter writer_;
 
-        void setup(Task &&q);
-        void finalize(curl_multi::message msg);
-
-        static size_t write_callback(char *ptr, size_t size, size_t nmemb,
-                                     void *userdata);
+        Transfer(std::unique_ptr<Task> task_ptr, curl_easy&& easy, curl_multi& multi);
+        curl_easy_in_multi setup(Task& task, curl_easy&& easy, curl_multi& multi);
+        osmview::curl_easy finalize(curl_multi::message msg, curl_multi& multi);
     };
 
     curl_global curl_global_;
-    std::queue<Task> queue_;
     std::mutex queue_mutex_;
+    std::queue<std::unique_ptr<Task>> todo_;
+    std::set<std::unique_ptr<Transfer>, unique_ptr_cmp> downloading_;
+    //std::queue<std::unique_ptr<DownloadResult>> done_;
+    std::vector<curl_easy> idle_;
+
     curl_multi curl_multi_;
-    std::vector<Transfer> idle_;
-    std::vector<Transfer> active_;
 
     void start_new();
 
@@ -77,8 +105,8 @@ public:
     explicit Downloader(size_t nstreams = 8);
     ~Downloader();
 
-    void enqueue(const std::string &url, const fs::path &file_name,
-                 const std::function<void(bool)> &callback);
+    void enqueue(const std::string& url, const fs::path& file_name,
+        const std::function<void(bool)>& callback);
     size_t perform();
 };
 
