@@ -56,7 +56,8 @@ int main(int /*argc*/, char ** /*argv*/)
         osmview::DeltaTimer motion_timer;
 
         bool mouse_pan = false;
-        int mousex = 0, mousey = 0;
+        int mousex = 0;
+        int mousey = 0;
 
         while (true)
         {

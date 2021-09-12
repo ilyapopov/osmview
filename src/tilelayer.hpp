@@ -33,7 +33,7 @@ class TileLayer : public Layer
     std::vector<std::pair<TileId, SDL2pp::Rect>>
     visible_tiles(int tile_level, double level,
                   const point_xy &map_pos,
-                  SDL2pp::Renderer &renderer, VisitOrder order = VisitOrder::from_center);
+                  SDL2pp::Renderer &renderer, VisitOrder order = VisitOrder::from_center) const;
 
 public:
     TileLayer(const std::string &name, const std::string &url,

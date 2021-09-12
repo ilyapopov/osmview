@@ -48,7 +48,7 @@ std::vector<std::pair<osmview::TileId, SDL2pp::Rect> >
 osmview::TileLayer::visible_tiles(int tile_level, double level,
                                   const point_xy &map_pos,
                                   SDL2pp::Renderer &renderer,
-                                  osmview::TileLayer::VisitOrder order)
+                                  osmview::TileLayer::VisitOrder order) const
 {
     auto output_size = renderer.GetOutputSize();
 
