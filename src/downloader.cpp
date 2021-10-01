@@ -107,7 +107,7 @@ osmview::curl_easy_in_multi osmview::Downloader::Transfer::setup(Task& task, cur
 {
     easy.set_url(task.url_.c_str())
         .set_user_agent("osmview https://github.com/ilyapopov/osmview")
-        .set_write_callback(writer_)
+        .set_write_method<FileWriter, &FileWriter::operator()>(writer_)
         .set_private(reinterpret_cast<void*>(this));
     return multi.add(std::move(easy));
 }

@@ -2,10 +2,12 @@
 #define CURL_HPP
 
 #include <cstddef>
-#include <curl/curl.h>
 #include <memory>
 #include <optional>
 #include <string_view>
+
+#define CURL_NO_OLDIES
+#include <curl/curl.h>
 
 struct CURLMsg;
 
@@ -50,10 +52,21 @@ public:
     {
         set_write_function(
             [](char* ptr, size_t /*size*/, size_t nmemb, void* userdata) {
-                auto f = reinterpret_cast<Callable*>(userdata);
+                auto f = static_cast<Callable*>(userdata);
                 return (*f)(std::string_view(ptr, nmemb));
             },
             reinterpret_cast<void*>(&f));
+        return *this;
+    }
+    template <typename Object, size_t (Object::*method)(std::string_view)>
+    curl_easy& set_write_method(Object& o)
+    {
+        set_write_function(
+            [](char* ptr, size_t /*size*/, size_t nmemb, void* userdata) {
+                auto o = static_cast<Object*>(userdata);
+                return (o->*method)(std::string_view(ptr, nmemb));
+            },
+            reinterpret_cast<void*>(&o));
         return *this;
     }
     curl_easy& set_user_agent(const char* user_agent);
@@ -85,7 +98,7 @@ private:
 
 class curl_multi {
 public:
-    using curlm_t = void;
+    using curlm_t = CURLM;
 
     class message {
         const CURLMsg* message_;

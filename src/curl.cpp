@@ -3,6 +3,7 @@
 #include <cstring>
 #include <stdexcept>
 
+#define CURL_NO_OLDIES
 #include "curl/curl.h"
 
 osmview::curl_easy::curl_easy()
