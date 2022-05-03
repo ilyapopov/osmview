@@ -42,7 +42,7 @@ add_executable(osmview
 target_link_libraries(osmview PRIVATE
     Threads::Threads
     CURL::libcurl
-    ${SDL2PP_LIBRARIES} ${SDLMAIN_LIBRARY})
+    SDL2pp::SDL2pp)
 target_include_directories(osmview SYSTEM PRIVATE
     ${SDL2PP_INCLUDE_DIRS}
     )
