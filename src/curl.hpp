@@ -25,15 +25,21 @@ public:
 };
 
 class curl_easy;
-class curl_easy_in_multi;
 class curl_multi;
 
-struct curl_easy_data {
+class curl_easy_handle {
     struct deleter {
         void operator()(CURL* h) const;
     };
-    curl_easy_data();
+    curl_easy_handle();
 
+    friend class curl_multi;
+    friend class curl_easy;
+
+private:
+    CURL* handle() {
+        return handle_.get();
+    }
     std::unique_ptr<CURL, deleter> handle_;
     std::unique_ptr<char[]> error_buffer_;
 };
@@ -81,19 +87,9 @@ public:
     friend class curl_multi;
 
 private:
-    curl_easy(curl_easy_data&& data);
+    curl_easy(curl_easy_handle&& data);
     CURL* handle() const { return data_.handle_.get(); }
-    curl_easy_data data_;
-};
-
-class curl_easy_in_multi {
-public:
-    friend class curl_multi;
-
-private:
-    curl_easy_in_multi(curl_easy_data&& data);
-    CURL* handle() const { return data_.handle_.get(); }
-    curl_easy_data data_;
+    curl_easy_handle data_;
 };
 
 class curl_multi {
@@ -116,9 +112,9 @@ public:
 
     curl_multi();
 
-    curl_easy_in_multi add(curl_easy&& easy);
+    curl_easy_handle add(curl_easy&& easy);
 
-    curl_easy remove(curl_easy_in_multi&& easy_handle);
+    curl_easy remove(curl_easy_handle&& easy_handle);
 
     int perform();
 

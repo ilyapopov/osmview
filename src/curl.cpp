@@ -69,7 +69,7 @@ const char* osmview::curl_easy::error_message() const
     return data_.error_buffer_.get();
 }
 
-osmview::curl_easy::curl_easy(curl_easy_data&& data)
+osmview::curl_easy::curl_easy(curl_easy_handle&& data)
     : data_(std::move(data))
 {
 }
@@ -106,20 +106,20 @@ std::optional<osmview::curl_multi::message> osmview::curl_multi::get_message()
     return message(msg);
 }
 
-osmview::curl_easy_in_multi osmview::curl_multi::add(curl_easy&& easy)
+osmview::curl_easy_handle osmview::curl_multi::add(curl_easy&& easy)
 {
     if (curl_multi_add_handle(handle(), easy.handle()) != CURLM_OK) {
         throw std::runtime_error("Curl: error in curl_multi_add_handle");
     }
-    return curl_easy_in_multi(std::move(easy.data_));
+    return curl_easy_handle(std::move(easy.data_));
 }
 
-osmview::curl_easy osmview::curl_multi::remove(osmview::curl_easy_in_multi&& easy_handle)
+osmview::curl_easy osmview::curl_multi::remove(osmview::curl_easy_handle&& easy_handle)
 {
     if (curl_multi_remove_handle(handle(), easy_handle.handle()) != CURLM_OK) {
         throw std::runtime_error("Curl: error in curl_multi_remove_handle");
     }
-    return curl_easy(std::move(easy_handle.data_));
+    return curl_easy(std::move(easy_handle));
 }
 
 osmview::curl_global::curl_global()
@@ -134,7 +134,7 @@ osmview::curl_global::~curl_global()
     curl_global_cleanup();
 }
 
-void osmview::curl_easy_data::deleter::operator()(CURL* h) const { curl_easy_cleanup(h); }
+void osmview::curl_easy_handle::deleter::operator()(CURL* h) const { curl_easy_cleanup(h); }
 
 void osmview::curl_multi::deleter::operator()(CURLM* h) const { curl_multi_cleanup(h); }
 
@@ -155,12 +155,7 @@ void* osmview::curl_multi::message::get_private() const
     return data;
 }
 
-osmview::curl_easy_in_multi::curl_easy_in_multi(curl_easy_data&& data)
-    : data_(std::move(data))
-{
-}
-
-osmview::curl_easy_data::curl_easy_data()
+osmview::curl_easy_handle::curl_easy_handle()
     : handle_(curl_easy_init())
     , error_buffer_(new char[CURL_ERROR_SIZE])
 {

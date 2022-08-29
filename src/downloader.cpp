@@ -103,7 +103,7 @@ osmview::Downloader::Transfer::Transfer(std::unique_ptr<Task> task_ptr, curl_eas
     writer_.open(tmp_file_name.c_str());
 }
 
-osmview::curl_easy_in_multi osmview::Downloader::Transfer::setup(Task& task, curl_easy&& easy, curl_multi& multi)
+osmview::curl_easy_handle osmview::Downloader::Transfer::setup(Task& task, curl_easy&& easy, curl_multi& multi)
 {
     easy.set_url(task.url_.c_str())
         .set_user_agent("osmview https://github.com/ilyapopov/osmview")

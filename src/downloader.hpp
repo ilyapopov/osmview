@@ -81,12 +81,12 @@ class Downloader {
 
     struct Transfer {
         std::unique_ptr<Task> task_;
-        curl_easy_in_multi easy_;
+        curl_easy_handle easy_;
         fs::path tmp_file_name;
         FileWriter writer_;
 
         Transfer(std::unique_ptr<Task> task_ptr, curl_easy&& easy, curl_multi& multi);
-        curl_easy_in_multi setup(Task& task, curl_easy&& easy, curl_multi& multi);
+        curl_easy_handle setup(Task& task, curl_easy&& easy, curl_multi& multi);
         osmview::curl_easy finalize(curl_multi::message msg, curl_multi& multi);
     };
 
