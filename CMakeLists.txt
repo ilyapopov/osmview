@@ -43,14 +43,9 @@ target_link_libraries(osmview PRIVATE
     Threads::Threads
     CURL::libcurl
     SDL2pp::SDL2pp)
-target_include_directories(osmview SYSTEM PRIVATE
-    ${SDL2PP_INCLUDE_DIRS}
-    )
 set_target_properties(osmview PROPERTIES
     CXX_STANDARD 17
     CXX_EXTENSIONS OFF
-    #CXX_INCLUDE_WHAT_YOU_USE "iwyu;-I/usr/lib/llvm-4.0/lib/clang/4.0.0/include/"
-    #CXX_CLANG_TIDY "clang-tidy;-checks=*,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-type-union-access,-readability-redundrant-declaration"
     )
 target_compile_options(osmview PRIVATE -Wall -Wextra -pedantic)
 
