@@ -105,10 +105,12 @@ void osmview::TileCache::gc()
         timestamps.emplace_back(item.second->access_timestamp(), item.first);
     }
 
-    std::sort(timestamps.begin(), timestamps.end());
+    // will be removing the oldert 1/4 of the elements
+    auto mid = timestamps.begin() + timestamps.size()/4;
+    // we don't need the full sort here. nth_element guarantees that all elements before mid are smaller than mid.
+    std::nth_element(timestamps.begin(), mid, timestamps.end());
 
-    for (auto i = timestamps.begin();
-         i != timestamps.begin() + timestamps.size()/4; ++i)
+    for (auto i = timestamps.begin(); i != mid; ++i)
     {
         cache_.erase(i->second);
     }
