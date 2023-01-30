@@ -2,6 +2,7 @@
 #define LAYER_HPP
 
 #include "coord.hpp"
+#include "timer.hpp"
 
 #include <string>
 
@@ -23,7 +24,7 @@ public:
 
     const std::string &name() const { return name_; }
     virtual void render(double level, const point_xy &map_pos,
-                        SDL2pp::Renderer &renderer) = 0;
+                        SDL2pp::Renderer &renderer, const BudgetTimer &frame_timer) = 0;
 };
 
 } // namespace osmview

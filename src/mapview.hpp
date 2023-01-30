@@ -22,6 +22,7 @@
 #define MAPVIEW_HPP_INCLUDED
 
 #include "coord.hpp"
+#include "timer.hpp"
 
 #include <memory>
 #include <string>
@@ -98,7 +99,7 @@ public:
         show_hud_ = !show_hud_;
     }
     
-    void render();
+    void render(const BudgetTimer& frame_timer);
 };
 
 } // namespace osmview

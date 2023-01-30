@@ -76,7 +76,7 @@ public:
     TileCacheItem(TileCache * cache,
                   fs::path file_name, std::string url);
 
-    SDL2pp::Optional<SDL2pp::Texture> &get_texture(SDL2pp::Renderer &renderer);
+    SDL2pp::Optional<SDL2pp::Texture> &get_texture(SDL2pp::Renderer &renderer, bool loading_allowed);
 
     State state() const
     {

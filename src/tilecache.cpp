@@ -21,6 +21,7 @@
 #include "tilecache.hpp"
 
 #include "tilecacheitem.hpp"
+#include "timer.hpp"
 
 #include "SDL.h"
 #include "SDL2pp/Font.hh"
@@ -77,14 +78,14 @@ void osmview::TileCache::prefetch(key_type tile_id)
     item.set_access_timestamp(seq_++);
 }
 
-SDL2pp::Texture & osmview::TileCache::get_texture(key_type tile_id)
+SDL2pp::Texture & osmview::TileCache::get_texture(key_type tile_id, bool loading_allowed)
 {
     downloader_.perform();
 
     auto & item = get_item(tile_id);
     item.set_access_timestamp(seq_++);
 
-    auto & texture = item.get_texture(renderer_);
+    auto & texture = item.get_texture(renderer_, loading_allowed);
 
     if (texture)
     {

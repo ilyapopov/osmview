@@ -21,6 +21,7 @@
 #include "tilecacheitem.hpp"
 
 #include "tilecache.hpp"
+#include "timer.hpp"
 
 #include "SDL2pp/Exception.hh"
 #include "SDL2pp/Optional.hh"
@@ -78,7 +79,7 @@ void osmview::TileCacheItem::download_callback(bool success)
 }
 
 SDL2pp::Optional<SDL2pp::Texture> &
-osmview::TileCacheItem::get_texture(SDL2pp::Renderer &renderer)
+osmview::TileCacheItem::get_texture(SDL2pp::Renderer &renderer, bool loading_allowed)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -98,7 +99,7 @@ osmview::TileCacheItem::get_texture(SDL2pp::Renderer &renderer)
                                      });
                 }
             }
-            else
+            else if (loading_allowed)
             {
                 surface_ = SDL2pp::Surface(file_name_.native());
             }

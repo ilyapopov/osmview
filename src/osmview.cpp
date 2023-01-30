@@ -61,6 +61,7 @@ int main(int /*argc*/, char ** /*argv*/)
 
         while (true)
         {
+            osmview::BudgetTimer frame_timer(std::chrono::milliseconds(12));
             // 1. Process events
             SDL_Event event{};
             while (SDL_PollEvent(&event))
@@ -154,7 +155,7 @@ int main(int /*argc*/, char ** /*argv*/)
 
             renderer.Clear();
 
-            mv.render();
+            mv.render(frame_timer);
 
             renderer.Present();
         }

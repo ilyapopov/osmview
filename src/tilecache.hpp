@@ -87,7 +87,7 @@ public:
     }
 
     void prefetch(key_type tile_id);
-    SDL2pp::Texture & get_texture(key_type tile_id);
+    SDL2pp::Texture & get_texture(key_type tile_id, bool loading_allowed);
     
     // Following member functions are thread-safe
 

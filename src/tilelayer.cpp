@@ -2,6 +2,7 @@
 
 #include "coord.hpp"           // for wrap
 #include "tile_id.hpp"         // for TileId
+#include "timer.hpp"
 
 #include <SDL2pp/Optional.hh>  // for NullOpt
 #include <SDL2pp/Point.hh>     // for Point
@@ -23,13 +24,14 @@ osmview::TileLayer::~TileLayer() = default;
 
 void osmview::TileLayer::render(double level,
                                 const point_xy &map_pos,
-                                SDL2pp::Renderer &renderer)
+                                SDL2pp::Renderer &renderer,
+                                const BudgetTimer& frame_timer)
 {
     int tile_level = std::round(level);
 
     for (const auto & p: visible_tiles(tile_level, level, map_pos, renderer, VisitOrder::from_center))
     {
-        auto & texture = cache_.get_texture(p.first);
+        auto & texture = cache_.get_texture(p.first, frame_timer.still_have_time());
         renderer.Copy(texture, SDL2pp::NullOpt, p.second);
     }
 }

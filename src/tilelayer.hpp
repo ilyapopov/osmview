@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "SDL2pp/Rect.hh"
+#include "timer.hpp"
 
 namespace SDL2pp { class Rect; }
 namespace SDL2pp { class Renderer; }
@@ -42,7 +43,7 @@ public:
     ~TileLayer() override;
 
     void render(double level, const point_xy &map_pos,
-                SDL2pp::Renderer &renderer) override;
+                SDL2pp::Renderer &renderer, const BudgetTimer &frame_timer) override;
 };
 
 } // namespace osmview

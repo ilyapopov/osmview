@@ -117,11 +117,11 @@ int osmview::Mapview::zoom(int step)
     return target_level_;
 }
 
-void osmview::Mapview::render()
+void osmview::Mapview::render(const BudgetTimer& frame_timer)
 {
     for (const auto &l: layers_)
     {
-        l->render(level_, {mapx_, mapy_}, renderer_);
+        l->render(level_, {mapx_, mapy_}, renderer_, frame_timer);
     }
 
     if (show_hud_)
