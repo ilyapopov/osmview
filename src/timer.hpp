@@ -31,20 +31,16 @@ namespace osmview
 
 class Timer
 {
-protected:
+public:
     using clock_type = std::chrono::steady_clock;
-    using time_point_type = std::chrono::time_point<clock_type>;
+    using time_point = clock_type::time_point;
+    using duration = clock_type::duration;
 
-    time_point_type started_;
-
-    static time_point_type now()
-    {
-        return clock_type::now();
-    }
+protected:
+    time_point started_;
 
 public:
-
-    Timer(): started_(now())
+    Timer(): started_(clock_type::now())
     {}
 
     virtual ~Timer();
@@ -52,14 +48,14 @@ public:
     double time() const
     {
         return std::chrono::duration_cast<std::chrono::duration<double> >(
-                    now() - started_
+                   clock_type::now() - started_
                     ).count();
     }
 };
 
 class DeltaTimer : public Timer
 {
-    time_point_type last_;
+    time_point last_;
 
 public:
     DeltaTimer() : last_(started_)
@@ -69,7 +65,7 @@ public:
 
     double delta()
     {
-        auto tmp = std::exchange(last_, now());
+        auto tmp = std::exchange(last_, clock_type::now());
         return std::chrono::duration_cast<std::chrono::duration<double> >(
                 last_ - tmp).count();
     }
@@ -84,6 +80,36 @@ public:
     explicit ScopedTimer(std::string label, std::ostream & stream);
 
     ~ScopedTimer() override;
+};
+
+class BudgetTimer{
+public:
+    using clock_type = std::chrono::steady_clock;
+    using time_point = clock_type::time_point;
+    using duration = clock_type::duration;
+
+private:
+    time_point deadline_;
+
+public:
+    explicit BudgetTimer(time_point deadline)
+        : deadline_(deadline)
+    {}
+    explicit BudgetTimer(duration budget)
+        : deadline_(clock_type::now() + budget)
+    {}
+
+    bool still_have_time() const {
+        return clock_type::now() < deadline_;
+    }
+
+    duration time_left() const {
+        auto now_ = clock_type::now();
+        if (now_ >= deadline_) {
+            return duration::zero();
+        }
+        return deadline_ - now_;
+    }
 };
 
 } // namespace osmview
