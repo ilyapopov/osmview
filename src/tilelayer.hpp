@@ -4,6 +4,7 @@
 #include "filesystem.hpp"
 #include "layer.hpp"
 #include "tilecache.hpp"
+#include "timer.hpp"
 
 #include <cstddef>
 #include <string>
@@ -11,7 +12,6 @@
 #include <vector>
 
 #include "SDL2pp/Rect.hh"
-#include "timer.hpp"
 
 namespace SDL2pp { class Rect; }
 namespace SDL2pp { class Renderer; }
