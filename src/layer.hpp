@@ -5,11 +5,8 @@
 #include "timer.hpp"
 
 #include <string>
+#include "sdl3.hpp"
 
-namespace SDL2pp
-{
-class Renderer;
-} // namespace SDL2pp
 
 namespace osmview
 {
@@ -23,8 +20,8 @@ public:
     virtual ~Layer();
 
     const std::string &name() const { return name_; }
-    virtual void render(double level, const point_xy &map_pos,
-                        SDL2pp::Renderer &renderer, const BudgetTimer &frame_timer) = 0;
+    virtual void render(float level, const point_xy &map_pos,
+                        SDL3::Renderer &renderer, const BudgetTimer &frame_timer) = 0;
 };
 
 } // namespace osmview

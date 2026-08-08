@@ -4,10 +4,7 @@
 #include "tile_id.hpp"         // for TileId
 #include "timer.hpp"
 
-#include <SDL2pp/Optional.hh>  // for NullOpt
-#include <SDL2pp/Point.hh>     // for Point
-#include <SDL2pp/Rect.hh>      // for Rect
-#include <SDL2pp/Renderer.hh>  // for Renderer
+#include "sdl3.hpp"
 
 #include <algorithm>           // for max, min, sort
 #include <cmath>               // for round, ceil, floor, pow
@@ -15,16 +12,16 @@
 osmview::TileLayer::TileLayer(const std::string &name,
                               const std::string &url,
                               const fs::path &cache_dir, size_t tile_size,
-                              SDL2pp::Renderer &renderer)
+                              SDL3::Renderer &renderer)
     : Layer(name), cache_(cache_dir, url, renderer), tile_size_(tile_size)
 {
 }
 
 osmview::TileLayer::~TileLayer() = default;
 
-void osmview::TileLayer::render(double level,
+void osmview::TileLayer::render(float level,
                                 const point_xy &map_pos,
-                                SDL2pp::Renderer &renderer,
+                                SDL3::Renderer &renderer,
                                 const BudgetTimer& frame_timer)
 {
     int tile_level = std::round(level);
@@ -32,51 +29,52 @@ void osmview::TileLayer::render(double level,
     for (const auto & p: visible_tiles(tile_level, level, map_pos, renderer, VisitOrder::from_center))
     {
         auto & texture = cache_.get_texture(p.first, frame_timer.still_have_time());
-        renderer.Copy(texture, SDL2pp::NullOpt, p.second);
+        renderer.RenderTexture(texture, SDL3::WholeSurface{}, p.second);
     }
 }
 
 namespace
 {
 
-inline int length_squared(const SDL2pp::Point & p)
+inline int length_squared(const SDL3::FPoint & p)
 {
     return p.x*p.x + p.y*p.y;
 }
 
 } // namespace
 
-std::vector<std::pair<osmview::TileId, SDL2pp::Rect> >
-osmview::TileLayer::visible_tiles(int tile_level, double level,
+std::vector<std::pair<osmview::TileId, SDL3::FRect> >
+osmview::TileLayer::visible_tiles(int tile_level, float level,
                                   const point_xy &map_pos,
-                                  SDL2pp::Renderer &renderer,
+                                  SDL3::Renderer &renderer,
                                   osmview::TileLayer::VisitOrder order) const
 {
-    auto output_size = renderer.GetOutputSize();
+    SDL3::Point output_size = renderer.GetOutputSize();
+    SDL3::FPoint center = SDL3::FPoint{static_cast<float>(output_size.x/2), static_cast<float>(output_size.y/2)};
 
-    double w = output_size.x;
-    double h = output_size.y;
+    float w = output_size.x;
+    float h = output_size.y;
 
-    double tile_scale = std::pow(2.0, tile_level);
+    float tile_scale = std::pow(2.0f, tile_level);
     int n = 1 << tile_level;
 
-    double tile_draw_scale = std::pow(2.0, level - tile_level);
-    int scaled_size = tile_draw_scale * tile_size_;
+    float tile_draw_scale = std::pow(2.0f, level - tile_level);
+    float scaled_size = tile_draw_scale * tile_size_;
 
-    double xc = map_pos.x * tile_scale;
-    double yc = map_pos.y * tile_scale;
+    float xc = map_pos.x * tile_scale;
+    float yc = map_pos.y * tile_scale;
 
-    double xmin = xc - 0.5 * w / scaled_size;
-    double xmax = xc + 0.5 * w / scaled_size;
-    double ymin = yc - 0.5 * h / scaled_size;
-    double ymax = yc + 0.5 * h / scaled_size;
+    float xmin = xc - 0.5f * w / scaled_size;
+    float xmax = xc + 0.5f * w / scaled_size;
+    float ymin = yc - 0.5f * h / scaled_size;
+    float ymax = yc + 0.5f * h / scaled_size;
 
     int imin = std::floor(xmin);
     int imax = std::ceil(xmax);
     int jmin = std::max(static_cast<int>(std::floor(ymin)), 0);
     int jmax = std::min(static_cast<int>(std::ceil(ymax)), n);
 
-    std::vector<std::pair<TileId, SDL2pp::Rect>> tiles;
+    std::vector<std::pair<TileId, SDL3::FRect>> tiles;
     tiles.reserve((output_size.x / scaled_size + 1)
                              * (output_size.y / scaled_size + 1));
 
@@ -86,9 +84,9 @@ osmview::TileLayer::visible_tiles(int tile_level, double level,
 
         for(int j = jmin; j < jmax; ++j)
         {
-            int a = std::round((w/2) + scaled_size * (i - xc));
-            int b = std::round((h/2) + scaled_size * (j - yc));
-            SDL2pp::Rect rect(a, b, scaled_size, scaled_size);
+            float a = (0.5f * w + scaled_size * (i - xc));
+            float b = (0.5f * h + scaled_size * (j - yc));
+            SDL3::FRect rect{a, b, scaled_size, scaled_size};
 
             tiles.emplace_back(TileId(tile_level, i1, j), rect);
         }
@@ -97,10 +95,10 @@ osmview::TileLayer::visible_tiles(int tile_level, double level,
     if (order == VisitOrder::from_center)
     {
         std::sort(tiles.begin(), tiles.end(),
-                  [&](const std::pair<TileId, SDL2pp::Rect> & lhs,
-                  const std::pair<TileId, SDL2pp::Rect> & rhs){
-            return length_squared(lhs.second.GetCentroid() - output_size/2)
-                    < length_squared(rhs.second.GetCentroid() - output_size/2);
+                  [&](const std::pair<TileId, SDL3::FRect> & lhs,
+                  const std::pair<TileId, SDL3::FRect> & rhs){
+            return length_squared(lhs.second.GetCentroid() - center)
+                    < length_squared(rhs.second.GetCentroid() - center);
         });
     }
 

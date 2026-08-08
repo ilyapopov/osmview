@@ -33,11 +33,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "SDL2pp/Optional.hh"
-#include "SDL2pp/Texture.hh"
-
-namespace SDL2pp { class Font; }
-namespace SDL2pp { class Renderer; }
+#include "sdl3.hpp"
 
 namespace osmview
 {
@@ -58,11 +54,11 @@ class TileCache
     Downloader downloader_;
     WorkerPool<std::function<void()> > thread_pool_;
 
-    SDL2pp::Renderer &renderer_;
+    SDL3::Renderer &renderer_;
 
     size_t max_size_;
 
-    std::unordered_map<TileCacheItem::State, SDL2pp::Optional<SDL2pp::Texture>>
+    std::unordered_map<TileCacheItem::State, std::optional<SDL3::Texture>>
         special_tiles_;
 
     size_t tile_size_;
@@ -71,14 +67,14 @@ class TileCache
     fs::path make_file_name(key_type tile_id) const;
     std::string make_url(key_type tile_id) const;
     void generate_special_tiles();
-    SDL2pp::Texture generate_text_tile(const std::string &text,
-                                       SDL2pp::Font &font);
+    SDL3::Texture generate_text_tile(const std::string &text,
+                                       SDL3::Font &font);
     void gc();
     TileCacheItem & get_item(key_type tile_id);
 
 public:
     TileCache(fs::path tile_dir, std::string url_base,
-              SDL2pp::Renderer &renderer, size_t max_size = 256);
+              SDL3::Renderer &renderer, size_t max_size = 256);
     ~TileCache();
 
     size_t size() const
@@ -87,7 +83,7 @@ public:
     }
 
     void prefetch(key_type tile_id);
-    SDL2pp::Texture & get_texture(key_type tile_id, bool loading_allowed);
+    SDL3::Texture & get_texture(key_type tile_id, bool loading_allowed);
     
     // Following member functions are thread-safe
 

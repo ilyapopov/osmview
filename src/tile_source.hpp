@@ -32,7 +32,7 @@ class tile_source
 {
 public:
     virtual ~tile_source() = 0;
-    virtual SDL2pp::Optional<shared_buffer> get_tile(TileId id) = 0;
+    virtual std::optional<shared_buffer> get_tile(TileId id) = 0;
     virtual void prefetch(TileId id) = 0;
 };
 

@@ -23,15 +23,13 @@
 #include "tilecache.hpp"
 #include "timer.hpp"
 
-#include "SDL2pp/Exception.hh"
-#include "SDL2pp/Optional.hh"
-#include "SDL2pp/Surface.hh"
-#include "SDL2pp/Texture.hh"
+#include "sdl3.hpp"
 
 #include <algorithm>
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <iostream>
 
 osmview::TileCacheItem::TileCacheItem(TileCache *cache,
                                       fs::path file_name,
@@ -46,7 +44,7 @@ void osmview::TileCacheItem::load()
     state_ = State::loading;
     try
     {
-        SDL2pp::Surface s(file_name_.native());
+        SDL3::Surface s(file_name_.native());
 
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -55,7 +53,7 @@ void osmview::TileCacheItem::load()
 
         state_ = State::surface_ready;
     }
-    catch (SDL2pp::Exception &)
+    catch (SDL3::Exception &)
     {
         state_ = State::downloading;
         cache_->download(url_, file_name_,
@@ -78,8 +76,8 @@ void osmview::TileCacheItem::download_callback(bool success)
     }
 }
 
-SDL2pp::Optional<SDL2pp::Texture> &
-osmview::TileCacheItem::get_texture(SDL2pp::Renderer &renderer, bool loading_allowed)
+std::optional<SDL3::Texture> &
+osmview::TileCacheItem::get_texture(SDL3::Renderer &renderer, bool loading_allowed)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -101,7 +99,12 @@ osmview::TileCacheItem::get_texture(SDL2pp::Renderer &renderer, bool loading_all
             }
             else if (loading_allowed)
             {
-                surface_ = SDL2pp::Surface(file_name_.native());
+                try {
+                    surface_ = SDL3::Surface(file_name_.native());
+                } catch (SDL3::Exception& e) {
+                    std::cerr << "Could not load image " << file_name_.native() << '\n';
+                    throw;
+                }
             }
         }
 
@@ -110,7 +113,7 @@ osmview::TileCacheItem::get_texture(SDL2pp::Renderer &renderer, bool loading_all
             texture_.emplace(renderer, *surface_);
 
             // delete the surface
-            surface_ = SDL2pp::NullOpt;
+            surface_ = std::nullopt;
         }
     }
 

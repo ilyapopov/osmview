@@ -25,20 +25,12 @@
 #include "timer.hpp"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "SDL.h"
-#include "SDL2pp/Font.hh"
-#include "SDL2pp/Optional.hh"
-#include "SDL2pp/Point.hh"
-#include "SDL2pp/Texture.hh"
-
-namespace SDL2pp
-{
-    class Renderer;
-} // namespace SDL2pp
+#include "sdl3.hpp"
 
 namespace osmview
 {
@@ -50,49 +42,50 @@ class Mapview
     static constexpr int tile_size_ = 256;
     static constexpr int max_level_ = 18;
 
-    static constexpr double v0_ = 2.0;
-    static constexpr double tau_ = 0.3;
+    static constexpr float v0_ = 2.0f;
+    static constexpr float tau_ = 0.3f;
 
-    double mapx_;
-    double mapy_;
+    float mapx_;
+    float mapy_;
     
-    double vx_, vy_;
-    double fx_, fy_;
+    float vx_, vy_;
+    float fx_, fy_;
     
-    int target_level_;
-    double level_;
-    double scale_;
+    float target_level_;
+    float level_;
+    float scale_;
     
     std::vector<std::unique_ptr<Layer>> layers_;
 
-    SDL2pp::Renderer &renderer_;
-    SDL2pp::Point output_size_;
+    SDL3::Renderer &renderer_;
+    SDL3::Point output_size_;
+    SDL3::FPoint center_;
 
-    SDL2pp::Font font_;
-    SDL2pp::Optional<SDL2pp::Texture> credits_texture_;
+    SDL3::Font font_;
+    std::optional<SDL3::Texture> credits_texture_;
 
     bool show_hud_;
 
-    double current_fps_;
-    double smoothed_fps_;
+    float current_fps_;
+    float smoothed_fps_;
 
-    SDL2pp::Point to_screen(double x, double y);
-    std::pair<double, double> from_screen(const SDL2pp::Point &point);
+    SDL3::FPoint to_screen(float x, float y);
+    std::pair<float, float> from_screen(const SDL3::FPoint &point);
 
     void render_hud();
-    SDL2pp::Texture make_text_texture(const std::string & text, const SDL_Color & color);
+    SDL3::Texture make_text_texture(const std::string & text, const SDL_Color & color);
 
 public:
 
-    explicit Mapview(SDL2pp::Renderer &renderer);
+    explicit Mapview(SDL3::Renderer &renderer);
     ~Mapview();
 
     void center_on_latlon(osmview::point_latlon);
-    void move(double move_x, double move_y);
-    void move_pix_hard(double dx, double dy);
-    void update(double dt);
+    void move(float move_x, float move_y);
+    void move_pix_hard(float dx, float dy);
+    void update(float dt);
     
-    int zoom(int step);
+    float zoom(float step);
 
     void toggle_hud()
     {

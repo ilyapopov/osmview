@@ -23,10 +23,7 @@
 #include "tilecacheitem.hpp"
 #include "timer.hpp"
 
-#include "SDL.h"
-#include "SDL2pp/Font.hh"
-#include "SDL2pp/Point.hh"
-#include "SDL2pp/Surface.hh"
+#include "sdl3.hpp"
 
 #include <algorithm>
 #include <sstream>
@@ -36,7 +33,7 @@
 
 osmview::TileCache::TileCache(fs::path tile_dir,
                               std::string url_base,
-                              SDL2pp::Renderer &renderer,
+                              SDL3::Renderer &renderer,
                               size_t max_size) :
     tile_dir_(std::move(tile_dir)),
     url_base_(std::move(url_base)),
@@ -78,7 +75,7 @@ void osmview::TileCache::prefetch(key_type tile_id)
     item.set_access_timestamp(seq_++);
 }
 
-SDL2pp::Texture & osmview::TileCache::get_texture(key_type tile_id, bool loading_allowed)
+SDL3::Texture & osmview::TileCache::get_texture(key_type tile_id, bool loading_allowed)
 {
     downloader_.perform();
 
@@ -137,7 +134,7 @@ std::string osmview::TileCache::make_url(key_type tile_id) const
 
 void osmview::TileCache::generate_special_tiles()
 {
-    SDL2pp::Font font("data/DejaVuSans.ttf", 20);
+    SDL3::Font font("data/DejaVuSans.ttf", 20);
     special_tiles_.emplace(TileCacheItem::State::loading,
                            generate_text_tile("Loading...", font));
     special_tiles_.emplace(TileCacheItem::State::downloading,
@@ -150,16 +147,16 @@ void osmview::TileCache::generate_special_tiles()
                            generate_text_tile("Scheduled", font));
 }
 
-SDL2pp::Texture
+SDL3::Texture
 osmview::TileCache::generate_text_tile(const std::string &text,
-                                       SDL2pp::Font &font)
+                                       SDL3::Font &font)
 {
-    SDL2pp::Surface surface(0, tile_size_, tile_size_, 32, 0u, 0u, 0u, 0u);
-    surface.FillRect(SDL2pp::NullOpt, SDL_MapRGB(surface.Get()->format, 192, 192, 192));
+    SDL3::Surface surface(tile_size_, tile_size_, SDL_PIXELFORMAT_RGBA8888);
+    surface.FillRect(SDL3::WholeSurface{}, surface.MapRGB(192, 192, 192));
 
     auto text_surface = font.RenderText_Blended(text, {128, 128, 128, 0});
-    text_surface.Blit(SDL2pp::NullOpt, surface,
-    {(surface.GetSize() - text_surface.GetSize())/ 2, text_surface.GetSize()});
+    text_surface.Blit(SDL3::WholeSurface{}, surface,
+    {(surface.GetSize() - text_surface.GetSize())/ 2});
 
-    return SDL2pp::Texture(renderer_, surface);
+    return SDL3::Texture(renderer_, surface);
 }

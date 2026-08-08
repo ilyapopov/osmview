@@ -125,7 +125,13 @@ osmview::curl_easy osmview::Downloader::Transfer::finalize(curl_multi::message m
     auto easy = multi.remove(std::move(easy_));
 
     if (msg.success()) {
-        fs::rename(tmp_file_name, task_->file_name_);
+        std::error_code ec;
+        fs::rename(tmp_file_name, task_->file_name_, ec);
+        // if (ec) {
+        //     // destination file already exists
+        //     // do nothing
+        //     return easy;
+        // }
         task_->callback_(true);
     } else {
         fs::remove(tmp_file_name);

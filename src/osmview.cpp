@@ -21,11 +21,8 @@
 #include "mapview.hpp"
 #include "timer.hpp"
 
-#include "SDL.h" // for constant defines
-#include "SDL2pp/Renderer.hh"
-#include "SDL2pp/SDL.hh"
-#include "SDL2pp/SDLTTF.hh"
-#include "SDL2pp/Window.hh"
+#include "sdl3.hpp"
+#include <SDL3/SDL_events.h>
 
 #include <exception>
 #include <iostream>
@@ -34,30 +31,25 @@ int main(int /*argc*/, char ** /*argv*/)
 {
     try
     {
-        SDL2pp::SDL sdl(SDL_INIT_VIDEO);
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
-        SDL2pp::SDLTTF sdlttf;
+        SDL3::SDL sdl(SDL_INIT_VIDEO);
+        SDL3::SDLTTF sdlttf;
 
-        SDL2pp::Window window("OpenStreetMap viewer",
-                              SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        SDL3::Window window("OpenStreetMap viewer",
                               800, 600,
                               SDL_WINDOW_RESIZABLE
                               );
 
         bool fullscreen = false;
 
-        SDL2pp::Renderer renderer(
-                    window,
-                    -1,
-                    SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
-                    );
+        SDL3::Renderer renderer(window);
+        renderer.SetVSync(1);
 
         osmview::Mapview mv(renderer);
         osmview::DeltaTimer motion_timer;
 
         bool mouse_pan = false;
-        int mousex = 0;
-        int mousey = 0;
+        float mousex = 0;
+        float mousey = 0;
 
         while (true)
         {
@@ -68,10 +60,10 @@ int main(int /*argc*/, char ** /*argv*/)
             {
                 switch (event.type)
                 {
-                case SDL_QUIT:
+                case SDL_EVENT_QUIT:
                     return 0;
-                case SDL_KEYDOWN:
-                    switch (event.key.keysym.scancode)
+                case SDL_EVENT_KEY_DOWN:
+                    switch (event.key.scancode)
                     {
                     case SDL_SCANCODE_MINUS:
                         mv.zoom(-1);
@@ -80,7 +72,7 @@ int main(int /*argc*/, char ** /*argv*/)
                         mv.zoom(1);
                         break;
                     case SDL_SCANCODE_F11:
-                        window.SetFullscreen(fullscreen ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP);
+                        window.SetFullscreen(!fullscreen);
                         fullscreen = !fullscreen;
                         break;
                     case SDL_SCANCODE_ESCAPE:
@@ -92,7 +84,7 @@ int main(int /*argc*/, char ** /*argv*/)
                         break;
                     }
                     break;
-                case SDL_MOUSEBUTTONDOWN:
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
                     switch (event.button.button)
                     {
                     case SDL_BUTTON_LEFT:
@@ -103,7 +95,7 @@ int main(int /*argc*/, char ** /*argv*/)
                         break;
                     }
                     break;
-                case SDL_MOUSEBUTTONUP:
+                case SDL_EVENT_MOUSE_BUTTON_UP:
                     switch (event.button.button)
                     {
                     case SDL_BUTTON_LEFT:
@@ -113,7 +105,7 @@ int main(int /*argc*/, char ** /*argv*/)
                         break;
                     }
                     break;
-                case SDL_MOUSEWHEEL:
+                case SDL_EVENT_MOUSE_WHEEL:
                     mv.zoom(event.wheel.y);
                     break;
                 default:
@@ -123,7 +115,7 @@ int main(int /*argc*/, char ** /*argv*/)
 
             // 2. Process key states
 
-            const Uint8 *keystate = SDL_GetKeyboardState(nullptr);
+            const bool *keystate = SDL_GetKeyboardState(nullptr);
             if (keystate[SDL_SCANCODE_LEFT])
             {
                 mv.move(-1, 0);

@@ -3,14 +3,11 @@ project(osmview C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-set(SDL2PP_WITH_IMAGE ON ) # if you need SDL_image support
-set(SDL2PP_WITH_MIXER OFF) # if you need SDL_mixer support
-set(SDL2PP_WITH_TTF   ON ) # if you need SDL_ttf support
-add_subdirectory(external/libSDL2pp)
-
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 find_package(CURL REQUIRED)
+find_package(SDL3 REQUIRED)
+find_package(SDL3_ttf REQUIRED)
 
 add_executable(osmview
                src/osmview.cpp
@@ -37,12 +34,15 @@ add_executable(osmview
                src/filesystem.cpp
                src/filesystem.hpp
                src/worker_pool.hpp
+               src/sdl3.hpp
               )
 
 target_link_libraries(osmview PRIVATE
     Threads::Threads
     CURL::libcurl
-    SDL2pp::SDL2pp)
+    SDL3::SDL3
+    SDL3_ttf::SDL3_ttf
+)
 set_target_properties(osmview PROPERTIES
     CXX_STANDARD 17
     CXX_EXTENSIONS OFF

@@ -27,16 +27,10 @@
 #include <cstddef>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 
-#include "SDL2pp/Optional.hh"
-#include "SDL2pp/Surface.hh"
-#include "SDL2pp/Texture.hh"
-
-namespace SDL2pp
-{
-    class Renderer;
-} // namespace SDL2pp
+#include "sdl3.hpp"
 
 namespace osmview
 {
@@ -60,8 +54,8 @@ public:
 private:
     const fs::path file_name_;
     const std::string url_;
-    SDL2pp::Optional<SDL2pp::Surface> surface_;
-    SDL2pp::Optional<SDL2pp::Texture> texture_;
+    std::optional<SDL3::Surface> surface_;
+    std::optional<SDL3::Texture> texture_;
     std::mutex mutex_;
     TileCache * cache_;
     std::atomic<State> state_;
@@ -76,7 +70,7 @@ public:
     TileCacheItem(TileCache * cache,
                   fs::path file_name, std::string url);
 
-    SDL2pp::Optional<SDL2pp::Texture> &get_texture(SDL2pp::Renderer &renderer, bool loading_allowed);
+    std::optional<SDL3::Texture> &get_texture(SDL3::Renderer &renderer, bool loading_allowed);
 
     State state() const
     {

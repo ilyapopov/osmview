@@ -30,31 +30,27 @@
 #include <iomanip>
 #include <sstream>
 
-#include "SDL2pp/Font.hh"
-#include "SDL2pp/Optional.hh"
-#include "SDL2pp/Point.hh"
-#include "SDL2pp/Renderer.hh"
-#include "SDL2pp/Surface.hh"
-#include "SDL2pp/Texture.hh"
+#include "sdl3.hpp"
 
-SDL2pp::Point osmview::Mapview::to_screen(double x, double y)
+SDL3::FPoint osmview::Mapview::to_screen(float x, float y)
 {
-    int x1 = std::round((x - mapx_) * scale_);
-    int y1 = std::round((y - mapy_) * scale_);
-    return SDL2pp::Point(x1, y1) + output_size_ / 2;
+    float x1 = (x - mapx_) * scale_;
+    float y1 = (y - mapy_) * scale_;
+    return SDL3::FPoint{x1, y1} + center_;
 }
 
-std::pair<double, double> osmview::Mapview::from_screen(const SDL2pp::Point &point)
+std::pair<float, float> osmview::Mapview::from_screen(const SDL3::FPoint &point)
 {
-    SDL2pp::Point p1 = point - output_size_ / 2;
+    SDL3::FPoint p1 = point - center_;
     return {mapx_ + p1.x / scale_, mapy_ + p1.y / scale_};
 }
 
-osmview::Mapview::Mapview(SDL2pp::Renderer &renderer)
+osmview::Mapview::Mapview(SDL3::Renderer &renderer)
     : mapx_(0.5), mapy_(0.5),
     vx_(0.0), vy_(0.0), fx_(0.0), fy_(0.0),
     target_level_(1), level_(1.0), scale_(1.0),
     renderer_(renderer), output_size_(renderer_.GetOutputSize()),
+    center_{float(output_size_.x/2), float(output_size_.y/2)},
     font_("data/DejaVuSans.ttf", 12),
     show_hud_(false),
     current_fps_(0), smoothed_fps_(0)
@@ -75,10 +71,10 @@ osmview::Mapview::Mapview(SDL2pp::Renderer &renderer)
                                                      renderer
                                                      ));
 
-    SDL2pp::Surface credits_surface = font_.RenderUTF8_Shaded(
+    SDL3::Surface credits_surface = font_.RenderText_Shaded(
         "Cartography © OpenStreetMap contributors | CC BY-SA | openstreetmap.org",
         {64, 64, 64, 0}, {255, 255, 255, 0});
-    credits_texture_.emplace(renderer_, credits_surface);
+    credits_texture_.emplace(SDL3::Texture(renderer_, credits_surface));
 }
 
 osmview::Mapview::~Mapview() = default;
@@ -92,21 +88,21 @@ void osmview::Mapview::center_on_latlon(point_latlon latlon)
     fx_ = fy_ = 0.0;
 }
 
-void osmview::Mapview::move(double move_x, double move_y)
+void osmview::Mapview::move(float move_x, float move_y)
 {
     fx_ += v0_ * move_x / scale_;
     fy_ += v0_ * move_y / scale_;
 }
 
-void osmview::Mapview::move_pix_hard(double dx, double dy)
+void osmview::Mapview::move_pix_hard(float dx, float dy)
 {
     mapx_ += dx / tile_size_ / scale_;
     mapy_ += dy / tile_size_ / scale_;
 }
 
-int osmview::Mapview::zoom(int step)
+float osmview::Mapview::zoom(float step)
 {
-    target_level_ = clamp(target_level_ + step, 0, max_level_);
+    target_level_ = clamp(target_level_ + step, 0.0f, float(max_level_));
 
     //TODO(ipopov):
     //for (const auto & p: visible_tiles(target_level_, VisitOrder::from_center))
@@ -130,9 +126,9 @@ void osmview::Mapview::render(const BudgetTimer& frame_timer)
     }
 }
 
-void osmview::Mapview::update(double dt)
+void osmview::Mapview::update(float dt)
 {
-    double beta = 1.0 - std::exp(-dt / tau_);
+    float beta = 1.0f - std::exp(-dt / tau_);
 
     vx_ += (fx_ - vx_) * beta;
     vy_ += (fy_ - vy_) * beta;
@@ -140,18 +136,18 @@ void osmview::Mapview::update(double dt)
     fx_ = 0.0;
     fy_ = 0.0;
 
-    mapx_ = wrap(mapx_ + vx_ * dt, 0.0, 1.0);
-    mapy_ = clamp(mapy_ + vy_ * dt, 0.0, 1.0);
+    mapx_ = wrap(mapx_ + vx_ * dt, 0.0f, 1.0f);
+    mapy_ = clamp(mapy_ + vy_ * dt, 0.0f, 1.0f);
 
     level_ += (target_level_ - level_) * beta;
-    if (std::abs(level_ - target_level_) < 1.0/256)
+    if (std::abs(level_ - target_level_) < 1.0f/256)
     {
         level_ = target_level_;
     }
-    level_ = clamp(level_, 0.0, static_cast<double>(max_level_));
-    scale_ = std::pow(2.0, level_);
+    level_ = clamp(level_, 0.0f, static_cast<float>(max_level_));
+    scale_ = std::pow(2.0f, level_);
 
-    current_fps_ = 1.0 / dt;
+    current_fps_ = 1.0f / dt;
     smoothed_fps_ += (current_fps_ - smoothed_fps_) * beta;
 }
 
@@ -159,14 +155,14 @@ void osmview::Mapview::render_hud()
 {
     SDL_Color color{128, 128, 128, 0};
     int line = 0;
-    int linespacing = font_.GetLineSkip() * 1.5;
+    int linespacing = font_.GetLineSkip() * 1.5f;
     {
         // coordinates
         std::ostringstream oss;
         point_latlon latlon = xy2latlon({mapx_, mapy_});
         oss << latlon.lat <<", " << latlon.lon;
         auto coord_texture = make_text_texture(oss.str(), color);
-        renderer_.Copy(coord_texture, SDL2pp::NullOpt, {0, (line++)*linespacing});
+        renderer_.RenderTexture(coord_texture, SDL3::WholeSurface{}, SDL3::FPoint{0.0f, float((line++)*linespacing)});
     }
     {
         // cache size
@@ -174,21 +170,21 @@ void osmview::Mapview::render_hud()
         //std::ostringstream oss;
         //oss << "Cache size: " << cache_->size();
         //auto coord_texture = make_text_texture(oss.str(), color);
-        //renderer_.Copy(coord_texture, SDL2pp::NullOpt, {0, (line++)*linespacing});
+        //renderer_.RenderTexture(coord_texture, std::nullopt, {0, (line++)*linespacing});
     }
     {
         // FPS
         std::ostringstream oss;
         oss << "FPS: " << std::setprecision(3) << smoothed_fps_;
         auto coord_texture = make_text_texture(oss.str(), color);
-        renderer_.Copy(coord_texture, SDL2pp::NullOpt, {0, (line++)*linespacing});
+        renderer_.RenderTexture(coord_texture, SDL3::WholeSurface{}, SDL3::FPoint{0.0f, float((line++)*linespacing)});
     }
 }
 
-SDL2pp::Texture
+SDL3::Texture
 osmview::Mapview::make_text_texture(const std::string &text,
                                     const SDL_Color &color)
 {
-    auto surface = font_.RenderUTF8_Blended(text, color);
-    return {renderer_, surface};
+    auto surface = font_.RenderText_Blended(text, color);
+    return SDL3::Texture(renderer_, surface);
 }

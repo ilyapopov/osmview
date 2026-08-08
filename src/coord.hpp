@@ -40,7 +40,7 @@ point_latlon xy2latlon(point_xy xy);
 point_xy latlon2xy(point_latlon latlon);
 
 template <typename T>
-inline T clamp(const T &x, const T &a, const T &b)
+inline T clamp(const T x, const T a, const T b)
 {
     if (x < a) {
         return a;
@@ -52,7 +52,7 @@ inline T clamp(const T &x, const T &a, const T &b)
 }
 
 template <typename T>
-inline T wrap(const T &x, const T &a, const T &b)
+inline T wrap(const T x, const T a, const T b)
 {
     T y = x;
     while (y < a)

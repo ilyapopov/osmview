@@ -11,10 +11,8 @@
 #include <utility>
 #include <vector>
 
-#include "SDL2pp/Rect.hh"
+#include "sdl3.hpp"
 
-namespace SDL2pp { class Rect; }
-namespace SDL2pp { class Renderer; }
 namespace osmview { class TileId; }
 
 namespace osmview
@@ -31,19 +29,19 @@ class TileLayer : public Layer
         from_center,
     };
 
-    std::vector<std::pair<TileId, SDL2pp::Rect>>
-    visible_tiles(int tile_level, double level,
+    std::vector<std::pair<TileId, SDL3::FRect>>
+    visible_tiles(int tile_level, float level,
                   const point_xy &map_pos,
-                  SDL2pp::Renderer &renderer, VisitOrder order = VisitOrder::from_center) const;
+                  SDL3::Renderer &renderer, VisitOrder order = VisitOrder::from_center) const;
 
 public:
     TileLayer(const std::string &name, const std::string &url,
               const fs::path &cache_dir, std::size_t tile_size,
-              SDL2pp::Renderer &renderer);
+              SDL3::Renderer &renderer);
     ~TileLayer() override;
 
-    void render(double level, const point_xy &map_pos,
-                SDL2pp::Renderer &renderer, const BudgetTimer &frame_timer) override;
+    void render(float level, const point_xy &map_pos,
+                SDL3::Renderer &renderer, const BudgetTimer &frame_timer) override;
 };
 
 } // namespace osmview
